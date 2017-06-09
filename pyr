@@ -13,7 +13,7 @@
 # -2Y               --python=python2[Y] (eg. -2)
 # -3Y               --python=python3[Y] (eg. -3.6)
 #     --silent      don't print tracebacks for KeyboardInterrupt, BrokenPipeError
-##TODO: rename --silent? interaction with --optimize=no?
+## TODO: rename --silent? interaction with --optimize=no?
 #
 # Python Options:
 # -e  --py-env      no Python -E

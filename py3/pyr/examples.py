@@ -1,10 +1,13 @@
 import string
 import sys
 
+
 def show(opts, args):
+    """example from readme.md"""
     print(sys.argv)
     print(opts)
     print(args)
+
 
 def showargs(opts, args):
     for name, value in opts:
@@ -14,6 +17,7 @@ def showargs(opts, args):
         print(s)
     for n, x in enumerate(args, start=1):
         print("{:3d} {}".format(n, x))
+
 
 SAFE_CHARS = set(string.ascii_letters + string.digits + "-_=+:,./")
 def reconstruct(opts, args):
@@ -36,14 +40,8 @@ def reconstruct(opts, args):
     argv = " ".join(map(q, argv))
     print(argv)
 
-def p(opts, args):
-    for x in range(10):
-        print(x)
-def throw(opts, args):
-    sys.exit("TODO")
-    f()
-def f():
-    raise ValueError("TODO")
+
+# TODO: cleanup and reorganize all following
 
 exit_codes = {
     "other":         1,
