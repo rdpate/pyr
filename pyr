@@ -1,0 +1,185 @@
+#!/bin/sh -ue
+#.help
+# pyr [MODULE:FUNC [OPT..] [ARG..]]
+#
+# Import MODULE and run sys.exit(FUNC(opts, args)), where opts is a list of (name, value) tuples and args is a list.
+#
+# If MODULE:FUNC is "-" or missing, run Python interactively.  Locals include opts and args variables, which may be non-empty if MODULE:FUNC is "-".
+#
+# Options:
+# -aP --as=PROG     sys.argv[0] (default: [unknown])
+# -pX --path=X      append colon-separated dirs to sys.path
+#     --py=PY       absolute/relative/$PATH Python (default: python3)
+# -2Y               --python=python2[Y] (eg. -2)
+# -3Y               --python=python3[Y] (eg. -3.6)
+#     --silent      don't print tracebacks for KeyboardInterrupt, BrokenPipeError
+##TODO: rename --silent? interaction with --optimize=no?
+#
+# Python Options:
+# -e  --py-env      no Python -E
+# -E  --no-py-env   Python -E (default)
+# -O0 --optimize=no no Python -O
+# -O  --optimize    Python -O (default)
+# -Od --optimize=d  Python -OO
+# -S  --no-site     Python -S (default with MODULE:FUNC)
+# -s  --site        no Python -S (default without MODULE:FUNC)
+# -u  --unbuffered  Python -u (default)
+#     --buffered    no Python -u
+##-U reserved for --buffered
+## TODO: -W -X
+
+fatal() {
+    printf %s\\n "$(basename "$0") error: $2" >&2
+    exit "$1"
+}
+is_digits() {
+    local x; for x; do case "$x" in *[!0-9]*|'') return 1 ;; *) ;; esac done
+}
+is_integer() {
+    local x; for x; do case "$x" in -*) is_digits "${x#-}" || return 1 ;; *[!0-9]*|'') return 1 ;; *) ;; esac done
+}
+
+as='[unknown]'
+dirs=
+python=python3
+silent=false
+py_env=-E
+optimize=-O
+site=default
+unbuffered=-u
+handle_option() {
+    local x p f
+    case "$1" in
+        # add options here, with common checks:
+            #[ $# = 2 ] || fatal 64 "missing value for option $1"
+            #[ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            #is_digits "$2" || fatal 64 "expected (non-negative) integer for option $1"
+            #is_integer "$2" || fatal 64 "expected integer for option $1"
+        # less commonly useful:
+            #[ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            # $2 is only empty for "--long-option=" (equals with no following value)
+        a|as)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            as="$2"
+            ;;
+        p|path)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            x="$2"
+            while [ -n "$x" ]; do
+                p="${x%%:*}"
+                if [ x"$p" = x"$x" ]; then
+                    x=
+                else
+                    x="${x#*:}"
+                fi
+                if [ -z "$p" ]; then
+                    fatal 64 "empty --path component"
+                fi
+                f="$(readlink -f -- "$p")" || fatal 64 "missing --dir: $p"
+                dirs="$dirs:$f"
+            done
+            ;;
+        py)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            python="$2"
+            ;;
+        2|3)
+            python="python$1${2-}"
+            ;;
+        silent)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            silent=true
+            ;;
+
+        e|py-env)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_env=
+            ;;
+        E|no-py-env)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_env=-E
+            ;;
+        O|optimize)
+            if [ x"${2-}" = x ]; then
+                optimize=-O
+            elif [ x"$2" = xd ]; then
+                optimize=-OO
+            else
+                case "$2" in
+                    0|no) optimize= ;;
+                    *) fatal 64 "unknown value for option $1" ;;
+                esac
+            fi
+            ;;
+        S|no-site)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            site=-S
+            ;;
+        s|site)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            site=
+            ;;
+        u|unbuffered)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            unbuffered=-u
+            ;;
+        buffered)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            unbuffered=
+            ;;
+
+        *) fatal 64 "unknown option $1" ;;
+    esac
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --) shift; break ;;
+        --*=*) x="${1#--}"; handle_option "${x%%=*}" "${x#*=}"; shift ;;
+        --*) handle_option "${1#--}"; shift ;;
+        -?) handle_option "${1#-}"; shift ;;
+        -?*)
+            v="${1#??}"
+            x="${1%"$v"}"
+            handle_option "${x#-}" "$v"
+            shift
+            ;;
+        *) break ;;
+    esac
+done
+
+bootstrap=pyr._bootstrap
+if [ $# = 0 ]; then
+    module="$bootstrap"
+    func=interact
+    if [ default = "$site" ]; then
+        site=
+    fi
+elif [ x"$1" = x- ]; then
+    module="$bootstrap"
+    func=interact
+    shift
+else
+    case "$1" in
+        ?*:?*)
+            module="${1%%:*}"
+            func="${1#*:}"
+            ;;
+        *) fatal 64 'invalid MODULE:FUNC argument' ;;
+    esac
+    shift
+fi
+if [ default = "$site" ]; then
+    site=-S
+fi
+
+exec "$python" $py_env $optimize $site $unbuffered -c '\
+import sys
+del sys.argv[0]
+del sys.path[0]
+#bootstrap
+sys.path.append(sys.argv.pop(0))
+import pyr._bootstrap
+' "$(readlink -f "$(dirname "$0")/py3")" \
+"$silent" "${dirs#:}" "$module" "$func" "$as" "$@"
