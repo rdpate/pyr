@@ -41,7 +41,9 @@ Arguments follow all options.  The first argument either starts without a hyphen
 
 Run without args or with "-" for an interactive interpreter.  Pyr's options to control Python options and sys.path are still usable.  Without args, the site module is imported, to be nearly identical to Python's native console.  (With "-", the default -S is used.)
 
-TODO: use PYTHONSTARTUP, or check which versions of code module already do so
+TODO: use PYTHONSTARTUP
+
+TOOD: avoid the current directory, as an empty string, being appended to sys.path by code.interact
 
 ### Project Console
 
