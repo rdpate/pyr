@@ -43,7 +43,7 @@ Run without args or with "-" for an interactive interpreter.  Pyr's options to c
 
 TODO: use PYTHONSTARTUP
 
-TOOD: avoid the current directory, as an empty string, being appended to sys.path by code.interact
+TODO: avoid the current directory, as an empty string, being appended to sys.path by code.interact
 
 ### Project Console
 
