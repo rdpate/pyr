@@ -181,5 +181,5 @@ del sys.path[0]
 #bootstrap
 sys.path.append(sys.argv.pop(0))
 import pyr._bootstrap
-' "$(readlink -f "$(dirname "$0")/py3")" \
+' "$(dirname "$(readlink -f "$0")")/py3" \
 "$silent" "${dirs#:}" "$module" "$func" "$as" "$@"
