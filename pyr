@@ -24,8 +24,8 @@
 #     --optimize[=on]       Python -O (default)
 #     --optimize=off        no Python -O
 #     --optimize=doc        Python -OO
-# -S  --no-site             Python -S (default with MODULE:FUNC)
-# -s  --site                no Python -S (default without MODULE:FUNC)
+#     --no-site             Python -S (default)
+# -s  --site                no Python -S
 #     --buffer=none         Python -u (default)
 #     --buffer[=python]     no Python -u
 ## TODO: -W -X
@@ -48,7 +48,7 @@ silent=false
 py_bytecode=
 py_env=-E
 py_optimize=-O
-py_site=default
+py_site=-S
 py_unbuffered=-u
 handle_option() {
     local x p f
@@ -115,7 +115,7 @@ handle_option() {
                 *) fatal 64 "unknown value for option $1" ;;
             esac
             ;;
-        S|no-site)
+        no-site)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
             py_site=-S
             ;;
@@ -155,9 +155,6 @@ bootstrap=pyr._bootstrap
 if [ $# = 0 ]; then
     module="$bootstrap"
     func=interact
-    if [ default = "$py_site" ]; then
-        py_site=
-    fi
 elif [ x"$1" = x- ]; then
     module="$bootstrap"
     func=interact
@@ -171,9 +168,6 @@ else
         *) fatal 64 'invalid MODULE:FUNC argument' ;;
     esac
     shift
-fi
-if [ default = "$py_site" ]; then
-    py_site=-S
 fi
 
 exec "$python" $py_bytecode $py_env $py_optimize $py_site $py_unbuffered -c '\
