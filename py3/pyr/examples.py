@@ -42,6 +42,7 @@ def reconstruct(opts, args):
 
 
 # TODO: cleanup and reorganize all following
+# maybe move into pyr.optics module (common "look"/optics for error messages)
 
 exit_codes = {
     "other":         1,
