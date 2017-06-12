@@ -16,6 +16,7 @@
 ## TODO: rename --silent? interaction with --optimize=no?
 #
 # Python Options:
+#     --no-bytecode Python -B
 # -e  --py-env      no Python -E
 # -E  --no-py-env   Python -E (default)
 # -O0 --optimize=no no Python -O
@@ -43,6 +44,7 @@ as='[unknown]'
 dirs=
 python=python3
 silent=false
+py_bytecode=
 py_env=-E
 optimize=-O
 site=default
@@ -92,6 +94,10 @@ handle_option() {
             silent=true
             ;;
 
+        no-bytecode)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_bytecode=-B
+            ;;
         e|py-env)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
             py_env=
@@ -174,7 +180,7 @@ if [ default = "$site" ]; then
     site=-S
 fi
 
-exec "$python" $py_env $optimize $site $unbuffered -c '\
+exec "$python" $py_bytecode $py_env $optimize $site $unbuffered -c '\
 import sys
 del sys.argv[0]
 del sys.path[0]
