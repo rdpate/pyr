@@ -1,0 +1,6 @@
+#!/bin/sh -ue
+cd "$(dirname "$0")/.."
+sed 's/^bootstrap=.*/bootstrap=__main__/; /^#bootstrap/q' pyr
+cat py3/pyr/_bootstrap.py
+printf "' "
+tail -n1 pyr

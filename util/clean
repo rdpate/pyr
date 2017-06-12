@@ -1,0 +1,5 @@
+#!/bin/sh -ue
+cd "$(dirname "$0")/.."
+rm -f pyr-standalone
+find . -type d -name __pycache__ -exec rm -r {} +
+find . -type f -name '*.py[co]' -delete
