@@ -46,9 +46,9 @@ python=python3
 silent=false
 py_bytecode=
 py_env=-E
-optimize=-O
-site=default
-unbuffered=-u
+py_optimize=-O
+py_site=default
+py_unbuffered=-u
 handle_option() {
     local x p f
     case "$1" in
@@ -108,31 +108,31 @@ handle_option() {
             ;;
         O|optimize)
             if [ x"${2-}" = x ]; then
-                optimize=-O
+                py_optimize=-O
             elif [ x"$2" = xd ]; then
-                optimize=-OO
+                py_optimize=-OO
             else
                 case "$2" in
-                    0|no) optimize= ;;
+                    0|no) py_optimize= ;;
                     *) fatal 64 "unknown value for option $1" ;;
                 esac
             fi
             ;;
         S|no-site)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            site=-S
+            py_site=-S
             ;;
         s|site)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            site=
+            py_site=
             ;;
         u|unbuffered)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            unbuffered=-u
+            py_unbuffered=-u
             ;;
         buffered)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            unbuffered=
+            py_unbuffered=
             ;;
 
         *) fatal 64 "unknown option $1" ;;
@@ -159,8 +159,8 @@ bootstrap=pyr._bootstrap
 if [ $# = 0 ]; then
     module="$bootstrap"
     func=interact
-    if [ default = "$site" ]; then
-        site=
+    if [ default = "$py_site" ]; then
+        py_site=
     fi
 elif [ x"$1" = x- ]; then
     module="$bootstrap"
@@ -176,11 +176,11 @@ else
     esac
     shift
 fi
-if [ default = "$site" ]; then
-    site=-S
+if [ default = "$py_site" ]; then
+    py_site=-S
 fi
 
-exec "$python" $py_bytecode $py_env $optimize $site $unbuffered -c '\
+exec "$python" $py_bytecode $py_env $py_optimize $py_site $py_unbuffered -c '\
 import sys
 del sys.argv[0]
 del sys.path[0]
