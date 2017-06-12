@@ -1,4 +1,6 @@
 #!/bin/sh -ue
+#.version
+# 0.0.0
 #.help
 # pyr [MODULE:FUNC [OPT..] [ARG..]]
 #
@@ -15,18 +17,17 @@
 #     --silent      don't print tracebacks for KeyboardInterrupt, BrokenPipeError
 ## TODO: rename --silent? interaction with --optimize=no?
 #
-# Python Options:
-#     --no-bytecode     Python -B
-# -e  --py-env          no Python -E
-# -E  --no-py-env       Python -E (default)
-# -O0 --optimize=no     no Python -O
-# -O  --optimize        Python -O (default)
-# -Od --optimize=d      Python -OO
-# -S  --no-site         Python -S (default with MODULE:FUNC)
-# -s  --site            no Python -S (default without MODULE:FUNC)
-# -u  --unbuffered      Python -u (default)
-#     --buffered        no Python -u
-##-U reserved for --buffered
+# Python options:
+#     --no-bytecode         Python -B
+# -e  --py-env              no Python -E
+# -E  --no-py-env           Python -E (default)
+#     --optimize[=on]       Python -O (default)
+#     --optimize=off        no Python -O
+#     --optimize=doc        Python -OO
+# -S  --no-site             Python -S (default with MODULE:FUNC)
+# -s  --site                no Python -S (default without MODULE:FUNC)
+#     --buffer=none         Python -u (default)
+#     --buffer[=python]     no Python -u
 ## TODO: -W -X
 
 fatal() {
@@ -106,17 +107,13 @@ handle_option() {
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
             py_env=-E
             ;;
-        O|optimize)
-            if [ x"${2-}" = x ]; then
-                py_optimize=-O
-            elif [ x"$2" = xd ]; then
-                py_optimize=-OO
-            else
-                case "$2" in
-                    0|no) py_optimize= ;;
-                    *) fatal 64 "unknown value for option $1" ;;
-                esac
-            fi
+        optimize)
+            case "${2:-on}" in
+                on)     py_optimize=-O      ;;
+                off)    py_optimize=        ;;
+                doc)    py_optimize=-OO     ;;
+                *) fatal 64 "unknown value for option $1" ;;
+            esac
             ;;
         S|no-site)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
@@ -126,13 +123,12 @@ handle_option() {
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
             py_site=
             ;;
-        u|unbuffered)
-            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            py_unbuffered=-u
-            ;;
-        buffered)
-            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            py_unbuffered=
+        buffer)
+            case "${2:-python}" in
+                none)       py_unbuffered=-u    ;;
+                python)     py_unbuffered=      ;;
+                *) fatal 64 "unknown value for option $1" ;;
+            esac
             ;;
 
         *) fatal 64 "unknown option $1" ;;
