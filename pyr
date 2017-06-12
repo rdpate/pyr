@@ -16,16 +16,16 @@
 ## TODO: rename --silent? interaction with --optimize=no?
 #
 # Python Options:
-#     --no-bytecode Python -B
-# -e  --py-env      no Python -E
-# -E  --no-py-env   Python -E (default)
-# -O0 --optimize=no no Python -O
-# -O  --optimize    Python -O (default)
-# -Od --optimize=d  Python -OO
-# -S  --no-site     Python -S (default with MODULE:FUNC)
-# -s  --site        no Python -S (default without MODULE:FUNC)
-# -u  --unbuffered  Python -u (default)
-#     --buffered    no Python -u
+#     --no-bytecode     Python -B
+# -e  --py-env          no Python -E
+# -E  --no-py-env       Python -E (default)
+# -O0 --optimize=no     no Python -O
+# -O  --optimize        Python -O (default)
+# -Od --optimize=d      Python -OO
+# -S  --no-site         Python -S (default with MODULE:FUNC)
+# -s  --site            no Python -S (default without MODULE:FUNC)
+# -u  --unbuffered      Python -u (default)
+#     --buffered        no Python -u
 ##-U reserved for --buffered
 ## TODO: -W -X
 
