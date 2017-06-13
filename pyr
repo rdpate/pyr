@@ -41,7 +41,7 @@ is_integer() {
     local x; for x; do case "$x" in -*) is_digits "${x#-}" || return 1 ;; *[!0-9]*|'') return 1 ;; *) ;; esac done
 }
 
-as='[unknown]'
+as=
 dirs=
 python=python3
 silent=false
@@ -63,6 +63,7 @@ handle_option() {
             # $2 is only empty for "--long-option=" (equals with no following value)
         a|as)
             [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
             as="$2"
             ;;
         p|path)
@@ -155,10 +156,16 @@ bootstrap=pyr._bootstrap
 if [ $# = 0 ]; then
     module="$bootstrap"
     func=interact
+    if [ -z "$as" ]; then
+        as='[console]'
+    fi
 elif [ x"$1" = x- ]; then
     module="$bootstrap"
     func=interact
     shift
+    if [ -z "$as" ]; then
+        as='[console]'
+    fi
 else
     case "$1" in
         ?*:?*)
@@ -178,4 +185,4 @@ del sys.path[0]
 sys.path.append(sys.argv.pop(0))
 import pyr._bootstrap
 ' "$(dirname "$(readlink -f "$0")")/py3" \
-"$silent" "${dirs#:}" "$module" "$func" "$as" "$@"
+"$silent" "${dirs#:}" "$module" "$func" "${as-[unknown]}" "$@"
