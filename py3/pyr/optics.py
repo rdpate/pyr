@@ -4,14 +4,14 @@
 import signal
 import sys
 
-if sys.version_info[0] == 2:
+try:
+    import pathlib
+except ImportError:
     class pathlib(object):
         @staticmethod
         def PurePath(v):
             return v
         Path = PurePath
-else:
-    import pathlib
 
 error_prefix = sys.argv[0] + " error: "
 def print_error(message, *rest):
