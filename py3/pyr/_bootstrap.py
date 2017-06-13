@@ -122,9 +122,9 @@ try:
         exit = e.code
         message = getattr(e, "message", None)
         if message:
-            sys.stderr.write("{} error: {}\n".format(os.path.basename(sys.argv[0]), message))
-        if not isinstance(exit, (int, type(None))):
-            sys.stderr.write("{} error: {}\n".format(os.path.basename(sys.argv[0]), exit))
+            sys.stderr.write("{} error: {}\n".format(sys.argv[0], message))
+        elif not isinstance(exit, (int, type(None))):
+            sys.stderr.write("{} error: {}\n".format(sys.argv[0], exit))
             exit = 1
     except BaseException as e:
         print_exception(e)
