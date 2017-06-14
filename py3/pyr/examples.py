@@ -7,6 +7,7 @@ from . import optics
 def show(opts, args):
     """example from readme.md"""
     print(sys.argv)
+    print("")  # PY2 compatible
     print(opts)
     print(args)
 
@@ -21,17 +22,20 @@ def showargs(opts, args):
         print("{:3d} {}".format(n, x))
 
 
-SAFE_CHARS = set(string.ascii_letters + string.digits + "-_=+:,./")
+SQUOTE_SAFE_CHARS = set(string.ascii_letters + string.digits + "-_=+:,./")
+def squote(s):
+    if not s:
+        return "''"
+    if all(c in SQUOTE_SAFE_CHARS for c in s):
+        return s
+    return "'" + s.replace("'", "'\\''") + "'"
 def reconstruct(opts, args):
-    def q(s):
-        if all(c in SAFE_CHARS for c in s):
-            return s
-        # TODO: what about non-printables, including controls?
-        return "'" + s.replace("'", "'\\''") + "'"
     argv = [sys.argv[0]]
     for n, v in opts:
-        if len(n) == 1 and v is not None:
-            argv.append("-" + n + v)
+        if len(n) == 1:
+            argv.append("-" + n)
+            if v:
+                argv[-1] += v
         elif v is None:
             argv.append("--" + n)
         else:
@@ -39,7 +43,7 @@ def reconstruct(opts, args):
     if args and args[0].startswith("-") and args[0] != "-":
         argv.append("--")
     argv.extend(args)
-    argv = " ".join(map(q, argv))
+    argv = " ".join(map(squote, argv))
     print(argv)
 
 

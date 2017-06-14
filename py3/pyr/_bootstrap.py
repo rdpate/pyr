@@ -2,6 +2,8 @@
 #   2.7, 3.4, 3.5, 3.6
 # (other Python versions may work)
 
+# code must be able to be included in shell script within single quotes
+
 import importlib
 import os
 import signal
@@ -88,7 +90,7 @@ signal.signal(signal.SIGHUP, exit_signal)
 signal.signal(signal.SIGTERM, exit_signal)
 
 silent = sys.argv.pop(0) != "false"
-for x in sys.argv.pop(0).split(":"):
+for x in sys.argv.pop(0)[1:].split(":"):
     if x not in sys.path:
         sys.path.append(x)
 def print_exception(e):
@@ -99,7 +101,8 @@ try:
         target = None
         target = get_target(sys.argv.pop(0), sys.argv.pop(0))
         args = sys.argv[1:]
-        sys.exit(target(list(pop_opts(args)), args))
+        opts = list(pop_opts(args))
+        sys.exit(target(opts, args))
     except KeyboardInterrupt as e:
         if not silent:
             print_exception(e)

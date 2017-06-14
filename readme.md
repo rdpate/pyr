@@ -18,6 +18,7 @@ Pyr parses options consistently and uniformly, replacing optparse and argparse, 
     import sys
     def main(opts, args):
         print(sys.argv)
+        print()
         print(opts)
         print(args)
     END
