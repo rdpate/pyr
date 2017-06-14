@@ -28,7 +28,9 @@
 # -s  --site                no Python -S
 #     --buffer=none         Python -u (default)
 #     --buffer[=python]     no Python -u
-## TODO: -W -X
+# -WT --warn=T              Python -WT
+# -XT                       Python -XT
+# -OT --other=T             Python T (prepend '-' if not present)
 
 fatal() {
     printf %s\\n "$(basename "$0") error: $2" >&2
@@ -40,6 +42,9 @@ is_digits() {
 is_integer() {
     local x; for x; do case "$x" in -*) is_digits "${x#-}" || return 1 ;; *[!0-9]*|'') return 1 ;; *) ;; esac done
 }
+squote() {
+    printf \'%s\' "$(printf %s "$1" | sed -r s/\'/\'\\\\\'\'/g)"
+}
 
 as=
 dirs=
@@ -50,6 +55,9 @@ py_env=-E
 py_optimize=-O
 py_site=-S
 py_unbuffered=-u
+py_warn=
+py_x=
+py_other=
 handle_option() {
     local x p f
     case "$1" in
@@ -131,6 +139,26 @@ handle_option() {
                 *) fatal 64 "unknown value for option $1" ;;
             esac
             ;;
+        W)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            py_warn="$py_warn -W$(squote "$2")"
+            ;;
+        X)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            py_x="$py_x -X$(squote "$2")"
+            ;;
+        O)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            case "$2" in
+                --|-) fatal 64 "invalid -O value: $2" ;;
+                -*) ;;
+                *) set -- "$1" "-$2" ;;
+            esac
+            py_other="$py_other $(squote "$2")"
+            ;;
 
         *) fatal 64 "unknown option $1" ;;
     esac
@@ -177,12 +205,16 @@ else
     shift
 fi
 
-exec "$python" $py_bytecode $py_env $py_optimize $py_site $py_unbuffered -c '\
+eval exec "$(squote "$python")" \
+    $py_bytecode $py_env $py_optimize \
+    $py_site $py_unbuffered \
+    $py_warn $py_x $py_other \
+    -c \''
 import sys
 del sys.argv[0]
 del sys.path[0]
 #bootstrap
 sys.path.append(sys.argv.pop(0))
 import pyr._bootstrap
-' "$(dirname "$(readlink -f "$0")")/py3" \
-"$silent" "${dirs#:}" "$module" "$func" "${as-[unknown]}" "$@"
+'\' "$(squote "$(dirname "$(readlink -f "$0")")/py3")" \
+"$silent" "$(squote "${dirs#:}")" "$(squote "$module")" "$(squote "$func")" "$(squote "${as-[unknown]}")" "$@"
