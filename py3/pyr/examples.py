@@ -48,8 +48,8 @@ def head(opts, args):
         "n": "lines",
         "lines": optics.nonneg_int,
         }
-    def shortcut_int(name, value, prev):
-        return optics.nonneg_int(name, name + (value or ""), prev)
+    def shortcut_int(name, value):
+        return optics.nonneg_int(name, name + (value or ""))
     for x in "123456789":
         opt_map[x] = ("lines", shortcut_int)
     lines = optics.parse_opts(opts, opt_map).get("lines", 10)

@@ -1,6 +1,7 @@
 """common look and feel for error messages"""
 # code must be compatible across all supported Python versions
 
+import inspect
 import signal
 import sys
 
@@ -63,25 +64,23 @@ def unexpected_value(name):
     return Exit("usage", "unexpected value for option " + name)
 
 
-# TODO: change function signature to use inspect module and only pass prev value parameter if function takes 3 args
-
-def any_string(name, value, _):
+def any_string(name, value):
     return value or ""
-def nonempty_string(name, value, _):
+def nonempty_string(name, value):
     if not value:
         raise missing_value(name)
     return value
 
-def store_true(name, value, _):
+def store_true(name, value):
     if value is not None:
         raise unexpected_value(name)
     return True
-def store_false(name, value, _):
+def store_false(name, value):
     if value is not None:
         raise unexpected_value(name)
     return False
 
-def integer(name, value, _):
+def integer(name, value):
     if not value:
         raise missing_value(name)
     if value.startswith("-"):
@@ -91,7 +90,7 @@ def integer(name, value, _):
     if not all(c in "0123456789" for c in rest):
         raise Exit("usage", "expected integer for option " + name)
     return int(value)
-def nonneg_int(name, value, _):
+def nonneg_int(name, value):
     if not value:
         raise missing_value(name)
     if not all(c in "0123456789" for c in value):
@@ -113,13 +112,13 @@ def list_of(function):
         return prev
     return f
 
-def existing_path(name, value, _):
+def existing_path(name, value):
     if not value:
         raise missing_value(name)
     if not os.path.exists(value):
         raise Exit("noinput", "no such path: " + value)
     return pathlib.Path(value)
-def existing_filename(name, value, _):
+def existing_filename(name, value):
     if not value:
         raise missing_value(name)
     if not os.path.exists(value):
@@ -127,7 +126,7 @@ def existing_filename(name, value, _):
     if not os.path.isfile(value):
         raise Exit("noinput", "not a file: " + value)
     return pathlib.Path(value)
-def existing_dir(name, value, _):
+def existing_dir(name, value):
     if not value:
         raise missing_value(name)
     if not os.path.exists(value):
@@ -136,28 +135,30 @@ def existing_dir(name, value, _):
         raise Exit("noinput", "not a directory: " + value)
     return pathlib.Path(value)
 
-def pure_path(name, value, _):
+def pure_path(name, value):
     if not value:
         raise missing_value(name)
     return pathlib.PurePath(value)
-def path(name, value, _):
+def path(name, value):
     if not value:
         raise missing_value(name)
     return pathlib.Path(value)
 
 
 def parse_opts(opts, opt_map, out=None):
-    """parse_opts with functions from opt_map
+    """parse options through functions from opt_map
 
     If out is None, it becomes a new dict.
 
     For each (name, raw) in opts, depending on opt_map.get(name) as X:
-    * function: out[name] = function(name, raw, out.get(name))
-    * tuple of (other, function): out[other] = function(name, raw, out.get(other))
+    * function: out[name] = X(name, raw, out.get(name))
+    * tuple of (other, func): out[other] = func(name, raw, out.get(other))
     * str: out[X] = opt_map[X](name, raw, out.get(X))
     * None: raise unknown_option(name)
 
-    That functions can use the previous (or None) value but not access other options' values is intentional.
+    For every call above, if len(inspect.getargspec(func).args) == 2, then func will be called with 2 parameters instead of 3.
+
+    That functions can use the previous value but not access other options' values is intentional.
     """
     if out is None:
         out = {}
@@ -174,5 +175,8 @@ def parse_opts(opts, opt_map, out=None):
         else:
             target = name
         assert callable(f), f
-        out[target] = f(name, value, out.get(target))
+        if len(inspect.getargspec(f).args) == 2:
+            out[target] = f(name, value)
+        else:
+            out[target] = f(name, value, out.get(target))
     return out
