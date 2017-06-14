@@ -57,13 +57,19 @@ def head(opts, args):
     if not args:
         args = ["-"]
     for filename in args:
-        if filename == "-":
-            f = sys.stdin
-        else:
-            f = open(filename)
-        if len(args) > 1:
-            print("==> {} <==".format(filename))
-        for n, line in enumerate(f, start=1):
-            sys.stdout.write(line)
-            if n == lines:
-                break
+        close = False
+        try:
+            if filename == "-":
+                f = sys.stdin
+            else:
+                f = open(filename)
+                close = True
+            if len(args) > 1:
+                print("==> {} <==".format(filename))
+            for n, line in enumerate(f, start=1):
+                sys.stdout.write(line)
+                if n == lines:
+                    break
+        finally:
+            if close:
+                f.close()
