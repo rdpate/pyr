@@ -15,7 +15,7 @@
 # -2Y               --python=python2[Y] (eg. -2)
 # -3Y               --python=python3[Y] (eg. -3.6)
 #     --silent      don't print tracebacks for KeyboardInterrupt, BrokenPipeError
-## TODO: rename --silent? interaction with --optimize=no?
+## FUTURE: rename --silent? interaction with --optimize=off?
 #
 # Python options:
 #     --no-bytecode         Python -B
@@ -26,8 +26,8 @@
 #     --optimize=doc        Python -OO
 #     --no-site             Python -S (default)
 # -s  --site                no Python -S
-#     --buffer=none         Python -u (default)
-#     --buffer[=python]     no Python -u
+#     --buffer=off          Python -u (default)
+#     --buffer[=on]         no Python -u
 # -WT --warn=T              Python -WT
 # -XT                       Python -XT
 #     --prepend=RAW         prepend RAW to interpreter args
@@ -124,7 +124,7 @@ handle_option() {
             py_env=-E
             ;;
         optimize)
-            case "${2:-on}" in
+            case "${2-on}" in
                 on)     py_optimize=-O      ;;
                 off)    py_optimize=        ;;
                 doc)    py_optimize=-OO     ;;
@@ -140,9 +140,9 @@ handle_option() {
             py_site=
             ;;
         buffer)
-            case "${2:-python}" in
-                none)       py_unbuffered=-u    ;;
-                python)     py_unbuffered=      ;;
+            case "${2-on}" in
+                off)    py_unbuffered=-u    ;;
+                on)     py_unbuffered=      ;;
                 *) fatal 64 "unknown value for option $1" ;;
             esac
             ;;
