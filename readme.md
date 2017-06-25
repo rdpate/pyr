@@ -53,8 +53,16 @@ Create an executable in your project:
     # eg. the project's Python module directory (relative path from $0)
     exec .../pyr -a"$0" -p"$(basename "$0")/py3" "$@"
 
-Now you either get a console or supply MODULE:FUNC, either way project-specific directories and settings are applied.  Also see how bin/reconstruct and bin/showargs call functions in pyr.examples.
+Now you either get a console or supply MODULE:FUNC, either way project-specific directories and settings are applied.
 
 ## Standalone Pyr
 
-Make pyr-standalone to copy into any project.
+Make pyr-standalone for a version without dependencies.  Copy into any project to use through stub scripts:
+
+    #!/bin/sh -ue
+    base="$(basename "$(readlink -f "$0")")"
+    # above if stub is at the top of the project
+    # if stub is one level below, add /.. to $base
+
+    exec "$base/depend/pyr" --as="$0" --path="$base/py3" PROJECT.MODULE:FUNCTION "$@"
+    # adjust Pyr's path and options as appropriate
