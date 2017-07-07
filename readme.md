@@ -40,29 +40,27 @@ Arguments follow all options.  The first argument either starts without a hyphen
 
 ## Interactive
 
-Pyr provides a simple interactive interpreter nearly identical to Python's native console.  Pyr's options to control Python options and sys.path are still usable.
+Pyr provides a simple interactive interpreter nearly identical to Python's native console.  Pyr's options to control Python options and sys.path are still applied.
 
 Differences from the native console include no site module (by default, use -s), unconditionally ignoring $PYTHONSTARTUP (regardless of options, due to code module), and the current directory, as an empty string, being appended to sys.path (rather than prepended, also due to code module).
 
-### Project Console
+## Project Pyr
 
-Create an executable in your project:
+Create a project utility command to localize Pyr settings:
 
     #!/bin/sh -ue
-    # replace -p with one or more directories to append to sys.path
+    # use -p with one or more directories to append to sys.path
     # eg. the project's Python module directory (relative path from $0)
-    exec .../pyr -a"$0" -p"$(basename "$0")/py3" "$@"
+    exec .../pyr -p"$(basename "$0")/py3" "$@"
 
-Now you either get a console or supply MODULE:FUNC, either way project-specific directories and settings are applied.
+Run without args for an interactive console or supply MODULE:FUNC, either way project-specific directories and settings are applied.  Individual stubs can hook into your Python code simply:
+
+    #!/bin/sh -ue
+    # if above script is PROJECT/util/pyr
+    # and this script is one level below PROJECT
+    exec "$(dirname "$(readlink -f "$0")")/../util/pyr" -a"$0" MODULE:FUNC "$@"
+    # readlink lets any symlinks to the stub work correctly
 
 ## Standalone Pyr
 
-Make pyr-standalone for a version without dependencies.  Copy into any project to use through stub scripts:
-
-    #!/bin/sh -ue
-    base="$(basename "$(readlink -f "$0")")"
-    # above if stub is at the top of the project
-    # if stub is one level below, add /.. to $base
-
-    exec "$base/depend/pyr" --as="$0" --path="$base/py3" PROJECT.MODULE:FUNCTION "$@"
-    # adjust Pyr's path and options as appropriate
+Make pyr-standalone for a single-file Pyr without dependencies.
