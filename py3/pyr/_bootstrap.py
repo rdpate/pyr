@@ -90,9 +90,11 @@ signal.signal(signal.SIGHUP, exit_signal)
 signal.signal(signal.SIGTERM, exit_signal)
 
 silent = sys.argv.pop(0) != "false"
-for x in sys.argv.pop(0)[1:].split(":"):
-    if x not in sys.path:
-        sys.path.append(x)
+x = sys.argv.pop(0)[1:]
+if x:
+    for x in x.split(":"):
+        if x not in sys.path:
+            sys.path.append(x)
 def print_exception(e):
     sys.stderr.write("{} error:\n".format(os.path.basename(sys.argv[0])))
     traceback.print_exception(type(e), e, sys.exc_info()[2].tb_next)

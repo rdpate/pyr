@@ -40,9 +40,7 @@ Arguments follow all options.  The first argument either starts without a hyphen
 
 ## Interactive
 
-Pyr provides a simple interactive interpreter nearly identical to Python's native console.  Pyr's options to control Python options and sys.path are still applied.
-
-Differences from the native console include no site module (by default, use -s), unconditionally ignoring $PYTHONSTARTUP (regardless of options, due to code module), and the current directory, as an empty string, being appended to sys.path (rather than prepended, also due to code module).
+Pyr provides a simple interactive interpreter nearly identical to Python's native console.  Pyr's options to control Python options and sys.path are still applied.  $PYTHONSTARTUP is always ignored.
 
 ## Project Pyr
 
