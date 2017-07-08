@@ -17,12 +17,12 @@ def get_target(module, attr):
         sys.stderr.write("ImportError: {}\n".format(e))
         sys.exit(64)
     target = module
-    try:
-        for x in attr.split("."):
-            target = getattr(module, x)
-    except AttributeError as e:
-        sys.stderr.write("AttributeError: {}\n".format(e))
-        sys.exit(64)
+    for x in attr.split("."):
+        try:
+            target = getattr(target, x)
+        except AttributeError as e:
+            sys.stderr.write("AttributeError: {}\n".format(e))
+            sys.exit(64)
     return target
 
 def pop_opts(args):
