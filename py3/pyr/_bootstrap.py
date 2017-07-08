@@ -10,38 +10,6 @@ import signal
 import sys
 import traceback
 
-def interact(opts, args):
-    import code, inspect, site
-    try:
-        site.removeduppaths()
-    except Exception:
-        pass
-    try:
-        site.sethelper()
-    except Exception:
-        pass
-    try:
-        import atexit, readline
-    except ImportError:
-        pass
-    else:
-        import rlcompleter
-        readline.parse_and_bind("tab: complete")
-        history_fn = os.path.expanduser("~/.python{}_history".format(sys.version_info[0]))
-        if os.path.isfile(history_fn):
-            readline.read_history_file(history_fn)
-        atexit.register(readline.write_history_file, history_fn)
-    locals = {"opts": opts, "args": args}
-    console = code.InteractiveConsole(locals)
-    if sys.version_info.major == 2:
-        # v2 requires banner, this is more useful than a blank line:
-        x = ["Python " + sys.version.split(None, 1)[0]]
-    else:
-        x = [""]
-    if "exitmsg" in inspect.getargspec(console.interact).args:
-        x.append("")
-    return console.interact(*x)
-
 def get_target(module, attr):
     try:
         module = importlib.import_module(module)
@@ -86,66 +54,71 @@ except NameError:
 
 def exit_signal(signum, frame):
     raise SystemExit(signum + 128)
-signal.signal(signal.SIGHUP, exit_signal)
-signal.signal(signal.SIGTERM, exit_signal)
-
-silent = sys.argv.pop(0) != "false"
-x = sys.argv.pop(0)[1:]
-if x:
-    for x in x.split(":"):
-        if x not in sys.path:
-            sys.path.append(x)
 def print_exception(e):
-    sys.stderr.write("{} error:\n".format(os.path.basename(sys.argv[0])))
+    sys.stderr.write("{} error...\n".format(sys.argv[0]))
     traceback.print_exception(type(e), e, sys.exc_info()[2].tb_next)
-try:
+
+def setup(argv):
+    signal.signal(signal.SIGHUP, exit_signal)
+    signal.signal(signal.SIGTERM, exit_signal)
+
+    silent = argv.pop(0) != "false"
+    x = argv.pop(0)[1:]
+    if x:
+        for x in x.split(":"):
+            if x not in sys.path:
+                sys.path.append(x)
+
+def go(argv):
+    setup(argv)
     try:
-        target = None
-        target = get_target(sys.argv.pop(0), sys.argv.pop(0))
-        args = sys.argv[1:]
-        opts = list(pop_opts(args))
-        sys.exit(target(opts, args))
-    except KeyboardInterrupt as e:
-        if not silent:
-            print_exception(e)
-        exit = 128 + signal.SIGINT
-    except BrokenPipeError as e:
-        if not silent:
-            print_exception(e)
-        exit = 128 + signal.SIGPIPE
-    except IOError as e:
-        # PY2: lacks BrokenPipeError
-        import errno
-        if e.errno == errno.EPIPE:
+        try:
+            target = None
+            target = get_target(argv.pop(0), argv.pop(0))
+            args = argv[1:]
+            opts = list(pop_opts(args))
+            sys.exit(target(opts, args))
+        except KeyboardInterrupt as e:
+            if not silent:
+                print_exception(e)
+            exit = 128 + signal.SIGINT
+        except BrokenPipeError as e:
             if not silent:
                 print_exception(e)
             exit = 128 + signal.SIGPIPE
-        else:
+        except IOError as e:
+            # PY2: lacks BrokenPipeError
+            import errno
+            if e.errno == errno.EPIPE:
+                if not silent:
+                    print_exception(e)
+                exit = 128 + signal.SIGPIPE
+            else:
+                print_exception(e)
+                exit = 1
+        except SystemExit as e:
+            exit = e.code
+            message = getattr(e, "message", None)
+            if message:
+                sys.stderr.write("{} error: {}\n".format(sys.argv[0], message))
+            elif not isinstance(exit, (int, type(None))):
+                sys.stderr.write("{} error: {}\n".format(sys.argv[0], exit))
+                exit = 1
+        except BaseException as e:
             print_exception(e)
             exit = 1
-    except SystemExit as e:
-        exit = e.code
-        message = getattr(e, "message", None)
-        if message:
-            sys.stderr.write("{} error: {}\n".format(sys.argv[0], message))
-        elif not isinstance(exit, (int, type(None))):
-            sys.stderr.write("{} error: {}\n".format(sys.argv[0], exit))
-            exit = 1
-    except BaseException as e:
-        print_exception(e)
-        exit = 1
-    sys.exit(exit)
-finally:
-    try:
-        if sys.stdout is not None:
-            sys.stdout.flush()
+        sys.exit(exit)
     finally:
         try:
             if sys.stdout is not None:
-                sys.stdout.close()
+                sys.stdout.flush()
         finally:
-            if sys.stderr is not None:
-                try:
-                    sys.stderr.flush()
-                finally:
-                    sys.stderr.close()
+            try:
+                if sys.stdout is not None:
+                    sys.stdout.close()
+            finally:
+                if sys.stderr is not None:
+                    try:
+                        sys.stderr.flush()
+                    finally:
+                        sys.stderr.close()

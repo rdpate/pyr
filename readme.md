@@ -38,9 +38,18 @@ Options must come before all arguments.
 
 Arguments follow all options.  The first argument either starts without a hyphen or is one of two special arguments: "-", which is retained, or "--", which is discarded.
 
-## Interactive
+## Interactive Console
 
-Pyr provides a simple interactive interpreter nearly identical to Python's native console.  Pyr's options to control Python options and sys.path are still applied.  $PYTHONSTARTUP is always ignored.
+Pyr provides a simple interactive interpreter nearly identical to Python's native console.  To use it, run Pyr without MODULE:FUNC or with "-".  The latter form allows further arguments (eg. shell globs) available as "args" variable.  (Options are also parsed, available as "opts".)  Console history is loaded from and saved to ~/.pythonX\_history, where X is the major Python version.
+
+Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP is always ignored; to get something similar, write a function which calls pyr.interact with a dict third argument:
+
+    import pyr
+    def custom_console(opts, args):
+        import sys, re, whatever
+        return pyr.interact(opts, args, locals())
+
+(Save the code as a module and use Pyr to run the function.)
 
 ## Project Pyr
 
@@ -50,6 +59,7 @@ Create a project utility command to localize Pyr settings:
     # use -p with one or more directories to append to sys.path
     # eg. the project's Python module directory (relative path from $0)
     exec .../pyr -p"$(basename "$0")/py3" "$@"
+    # specify path to pyr or pyr-standalone (see Standalone Pyr)
 
 Run without args for an interactive console or supply MODULE:FUNC, either way project-specific directories and settings are applied.  Individual stubs can hook into your Python code simply:
 

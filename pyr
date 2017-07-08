@@ -181,15 +181,14 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-bootstrap=pyr._bootstrap
 if [ $# = 0 ]; then
-    module="$bootstrap"
+    module=pyr
     func=interact
     if [ -z "$as" ]; then
         as='[console]'
     fi
 elif [ x"$1" = x- ]; then
-    module="$bootstrap"
+    module=pyr
     func=interact
     shift
     if [ -z "$as" ]; then
@@ -217,5 +216,6 @@ del sys.path[0]
 #bootstrap
 sys.path.append(sys.argv.pop(0))
 import pyr._bootstrap
+pyr._bootstrap.go(sys.argv)
 '\' $(squote "$(dirname "$(readlink -f "$0")")/py3") \
 "$silent" "$(squote "$dirs" "$module" "$func" "${as:-[unknown]}" "$@")"
