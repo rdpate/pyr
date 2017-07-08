@@ -1,18 +1,20 @@
 Pyr
 ===
 
-    pyr [MODULE:FUNC [OPT..] [ARG..]]
+    pyr [TARGET [OPT..] [ARG..]]
 
 Pyr ("pure") is an experimental Python front-end to replace "pythonXY script".  Put code into modules!  Pyr replaces "pythonXY -m", which prepends the current working directory to sys.path and only allows further sys.path additions through $PYTHONPATH.
 
 Pyr parses options consistently and uniformly, replacing optparse and argparse, but options must, as always, be given meaning by the code using them.
+
+TARGET specifies a module (which may be nested, eg. some.package.module) and dotted attribute path (eg. function or some.nested.callable, defaulting to "main") which is called with two arguments: (opts, args).
 
 ## Quick Example
 
     $ mkdir bin py3
     $ cat >bin/show <<END
     #!/bin/sh -ue
-    exec .../pyr -a"$0" -3.6 --path="$(dirname "$0")/../py3" example:main "$@"
+    exec .../pyr -a"$0" -3.6 --path="$(dirname "$0")/../py3" example "$@"
     END
     $ cat >py3/example.py <<END
     import sys
@@ -40,7 +42,7 @@ Arguments follow all options.  The first argument either starts without a hyphen
 
 ## Interactive Console
 
-Pyr provides a simple interactive interpreter nearly identical to Python's native console.  To use it, run Pyr without MODULE:FUNC or with "-".  The latter form allows further arguments (eg. shell globs) available as "args" variable.  (Options are also parsed, available as "opts".)  Console history is loaded from and saved to ~/.pythonX\_history, where X is the major Python version.
+Pyr provides a simple interactive interpreter nearly identical to Python's native console.  To use it, run Pyr without TARGET or with "-".  The latter form allows further arguments (eg. shell globs) available as "args" variable.  (Options are also parsed, available as "opts".)  Console history is loaded from and saved to ~/.pythonX\_history, where X is the major Python version.
 
 Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP is always ignored; to get something similar, write a function which calls pyr.interact with a dict third argument:
 
@@ -52,7 +54,7 @@ Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP 
 Save the code as a module and tell Pyr about it with a stub (eg. ~/bin/pyr):
 
     #!/bin/sh -ue
-    exec .../pyr -p.../contains-above-module --interact=MODULE:custom_console "$@"
+    exec .../pyr -p.../contains-above-module --interact=MODULE.custom_console "$@"
 
 ## Project Pyr
 
@@ -64,12 +66,12 @@ Create a project utility command to localize Pyr settings:
     exec .../pyr -p"$(basename "$0")/py3" "$@"
     # specify path to pyr or pyr-standalone (see Standalone Pyr)
 
-Run without args for an interactive console or supply MODULE:FUNC, either way project-specific directories and settings are applied.  Individual stubs can hook into your Python code simply:
+Run without args for an interactive console or supply TARGET, either way project-specific directories and settings are applied.  Individual stubs can hook into your Python code simply:
 
     #!/bin/sh -ue
     # if above script is PROJECT/util/pyr
     # and this script is one level below PROJECT
-    exec "$(dirname "$(readlink -f "$0")")/../util/pyr" -a"$0" MODULE:FUNC "$@"
+    exec "$(dirname "$(readlink -f "$0")")/../util/pyr" -a"$0" TARGET "$@"
     # readlink lets any symlinks to the stub work correctly
 
 ## Standalone Pyr

@@ -9,17 +9,33 @@ import os
 import signal
 import sys
 import traceback
+import types
 
-def get_target(module, attr):
+def get_target(target, default="main"):
+    target, _, rest = target.partition(".")
     try:
-        module = importlib.import_module(module)
+        target = importlib.import_module(target)
     except ImportError as e:
         sys.stderr.write("ImportError: {}\n".format(e))
         sys.exit(64)
-    target = module
-    for x in attr.split("."):
+    for x in rest.split(".") if rest else ():
         try:
             target = getattr(target, x)
+        except AttributeError as e:
+            if isinstance(target, types.ModuleType):
+                try:
+                    target = importlib.import_module("." + x, package=target.__name__)
+                except ImportError as ee:
+                    print("ImportError", ee)
+                    pass
+                else:
+                    continue
+            print(type(target), isinstance(target, types.ModuleType))
+            sys.stderr.write("AttributeError: {}\n".format(e))
+            sys.exit(64)
+    if isinstance(target, types.ModuleType):
+        try:
+            target = getattr(target, default)
         except AttributeError as e:
             sys.stderr.write("AttributeError: {}\n".format(e))
             sys.exit(64)
@@ -73,8 +89,7 @@ def go(argv):
     setup(argv)
     try:
         try:
-            target = None
-            target = get_target(argv.pop(0), argv.pop(0))
+            target = get_target(argv.pop(0))
             args = argv[1:]
             opts = list(pop_opts(args))
             sys.exit(target(opts, args))
