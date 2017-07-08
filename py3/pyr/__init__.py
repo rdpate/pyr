@@ -1,3 +1,4 @@
+import os
 import sys
 
 def interact(opts, args, locals=None):
