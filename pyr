@@ -16,6 +16,7 @@
 # -3Y               --python=python3[Y] (eg. -3.6)
 #     --silent      don't print tracebacks for KeyboardInterrupt, BrokenPipeError
 ## FUTURE: rename --silent? interaction with --optimize=off?
+#     --interact=T  use T for console (default pyr:interact)
 #
 # Python options:
 #     --no-bytecode         Python -B
@@ -57,6 +58,7 @@ as=
 dirs=
 python=python3
 silent=false
+interact=pyr:interact
 py_bytecode=
 py_env=-E
 py_optimize=-O
@@ -109,6 +111,11 @@ handle_option() {
         silent)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
             silent=true
+            ;;
+        interact)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            interact="$2"
             ;;
 
         no-bytecode)
@@ -182,28 +189,26 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# = 0 ]; then
-    module=pyr
-    func=interact
+    set -- "$interact"
     if [ -z "$as" ]; then
         as='[console]'
     fi
 elif [ x"$1" = x- ]; then
-    module=pyr
-    func=interact
     shift
+    set -- "$interact" "$@"
     if [ -z "$as" ]; then
         as='[console]'
     fi
-else
-    case "$1" in
-        ?*:?*)
-            module="${1%%:*}"
-            func="${1#*:}"
-            ;;
-        *) fatal 64 'invalid MODULE:FUNC argument' ;;
-    esac
-    shift
 fi
+case "$1" in
+    *:*:*) fatal 64 'invalid MODULE:FUNC argument' ;;
+    ?*:?*)
+        module="${1%%:*}"
+        func="${1#*:}"
+        ;;
+    *) fatal 64 'invalid MODULE:FUNC argument' ;;
+esac
+shift
 
 eval exec "$(squote "$python")" \
     $py_prepend $py_x $py_warn \

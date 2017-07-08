@@ -49,7 +49,10 @@ Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP 
         import sys, re, whatever
         return pyr.interact(opts, args, locals())
 
-(Save the code as a module and use Pyr to run the function.)
+Save the code as a module and tell Pyr about it with a stub (eg. ~/bin/pyr):
+
+    #!/bin/sh -ue
+    exec .../pyr -p.../contains-above-module --interact=MODULE:custom_console "$@"
 
 ## Project Pyr
 
