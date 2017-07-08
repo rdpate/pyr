@@ -51,6 +51,7 @@ _add_signals()
 class Exit(SystemExit):
     """SystemExit with a specific code and a string message"""
     def __init__(self, code, message=None):
+        """code is an integer or exit_codes key"""
         if not isinstance(code, int):
             code = exit_codes[code]
         SystemExit.__init__(self, code)
@@ -62,6 +63,16 @@ def missing_value(name):
     return Exit("usage", "missing value for option " + name)
 def unexpected_value(name):
     return Exit("usage", "unexpected value for option " + name)
+
+def unknown_args():
+    return Exit("usage", "unknown arguments")
+def missing_arg(name):
+    return Exit("usage", "missing expected argument " + name)
+def missing_args(*names):
+    return Exit("usage", "missing expected arguments " + " ".join(names))
+def unknown_extra_args(count):
+    message = "{} unknown extra argument{}".format(count, "s" if count != 1 else "")
+    return Exit("usage", message)
 
 
 def any_string(name, value):

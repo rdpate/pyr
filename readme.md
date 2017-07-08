@@ -76,4 +76,8 @@ Run without args for an interactive console or supply TARGET, either way project
 
 ## Standalone Pyr
 
-Make pyr-standalone for a single-file Pyr without dependencies.
+Make pyr-standalone for a single-file Pyr without dependencies.  Standalone does not have pyr.optics.
+
+## Consistent Error Messages
+
+Pyr.optics provides several utilities for option and argument validation with consistent error messages.  See Exit, parse\_opts, and more.
