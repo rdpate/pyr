@@ -1,6 +1,6 @@
 #!/bin/sh -ue
 #.version
-# 0.0.0
+# 0.1.0
 #.help
 # pyr [TARGET [OPT..] [ARG..]]
 #
