@@ -9,14 +9,14 @@
 # If TARGET is "-" or missing, run Python interactively.  Locals include opts and args variables, which may be non-empty if TARGET is "-".
 #
 # Options:
-# -aP --as=PROG     sys.argv[0] (default: [pyr TARGET])
-# -pX --path=X      append colon-separated dirs to sys.path
-#     --py=PY       absolute/relative/$PATH Python (default: python3)
-# -2Y               --python=python2[Y] (eg. -2)
-# -3Y               --python=python3[Y] (eg. -3.6)
-#     --signal-tb   print tracebacks for (some) signal exits
-## FUTURE: rename --silent? interaction with --optimize=off?
-#     --interact=T  use T for console (default pyr.interact)
+# -aP --as=PROG             sys.argv[0] (default: [pyr TARGET])
+# -pX --path=X              append colon-separated dirs to sys.path
+#     --py=PY               absolute/relative/$PATH Python (default: python3)
+# -2Y                       --python=python2[Y] (eg. -2)
+# -3Y                       --python=python3[Y] (eg. -3.6)
+#     --signal-tb           print tracebacks for (some) signal exits
+## FUTURE: signal-tb value to list signals that print traceback?
+#     --interact=T          use T for console (default pyr.interact)
 #
 # Python options:
 #     --no-bytecode         Python -B
@@ -26,7 +26,7 @@
 #     --optimize=off        no Python -O
 #     --optimize=doc        Python -OO
 #     --no-site             Python -S (default)
-# -s  --site                no Python -S
+# -s  --site[=user,sys]     append user/system site dirs after --path
 #     --buffer=off          Python -u (default)
 #     --buffer[=on]         no Python -u
 # -WT --warn=T              Python -WT
@@ -59,10 +59,10 @@ dirs=
 python=python3
 signal_tb=false
 interact=pyr.interact
+site=
 py_bytecode=
 py_env=-E
 py_optimize=-O
-py_site=-S
 py_unbuffered=-u
 py_warn=
 py_x=
@@ -140,11 +140,29 @@ handle_option() {
             ;;
         no-site)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            py_site=-S
+            site=
             ;;
         s|site)
-            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            py_site=
+            if [ $# = 1 ]; then
+                site=user,sys
+            elif [ -z "$2" ]; then
+                site=
+            else
+                site=
+                set -- "$2"
+                while [ $# != 0 ]; do
+                    case "$1" in
+                        *,*) set -- "${1%%,*}" "${1#*,}"
+                    esac
+                    case "$1" in
+                        user) site="${site:+$site,}user" ;;
+                        sys) site="${site:+$site,}sys" ;;
+                        '') fatal 64 'empty --site item' ;;
+                        *) fatal 64 "unknown --site item: $1" ;;
+                    esac
+                    shift
+                done
+            fi
             ;;
         buffer)
             case "${2-on}" in
@@ -204,10 +222,9 @@ else
     shift
 fi
 
-eval exec "$(squote "$python")" \
+eval exec "$(squote "$python")" -S \
     $py_prepend $py_x $py_warn \
-    $py_bytecode $py_env $py_optimize \
-    $py_site $py_unbuffered \
+    $py_bytecode $py_env $py_optimize $py_unbuffered \
     -c \''
 import sys
 del sys.argv[0]
@@ -217,4 +234,4 @@ sys.path.append(sys.argv.pop(0))
 from pyr import _bootstrap
 _bootstrap(sys.argv)
 '\' $(squote "$(dirname "$(readlink -f "$0")")/py3") \
-"$signal_tb" "$(squote "$dirs" "$target" "${as:-[pyr $target]}" "$@")"
+"$signal_tb" "$(squote "$dirs" "$site" "$target" "${as:-[pyr $target]}" "$@")"
