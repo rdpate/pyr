@@ -6,6 +6,6 @@ clean:
 	rm -f pyr-standalone
 
 
-pyr-standalone: pyr py3/pyr/__init__.py util/standalone
-	util/standalone >$@
+pyr-standalone: pyr py3/pyr/__init__.py util/gen-standalone
+	util/gen-standalone >$@
 	chmod +x $@
