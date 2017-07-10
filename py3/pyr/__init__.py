@@ -47,10 +47,11 @@ def interact(opts, args, locals=None):
         x.append("")
     return console.interact(*x)
 
-class HangupSignal(SystemExit):
+class SignalExit(SystemExit):
     pass
-
-class TerminateSignal(SystemExit):
+class HangupSignal(SignalExit):
+    pass
+class TerminateSignal(SignalExit):
     pass
 
 def _get_target(target):
