@@ -1,10 +1,10 @@
 #!/bin/sh -ue
 cd "$(dirname "$0")/.."
 sed '/^#.*TO''DO/d; /^#bootstrap/q' pyr
-sed '/^ *#/d' py3/pyr/__init__.py py3/pyr/_bootstrap.py
+sed '/^ *#/d' py3/pyr/__init__.py
 cat <<'END'
 sys.modules["pyr"] = sys.modules["__main__"]
-go(sys.argv)
+_bootstrap(sys.argv)
 END
 printf "'\\\\' "
 tail -n1 pyr

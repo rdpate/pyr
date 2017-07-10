@@ -9,12 +9,12 @@
 # If TARGET is "-" or missing, run Python interactively.  Locals include opts and args variables, which may be non-empty if TARGET is "-".
 #
 # Options:
-# -aP --as=PROG     sys.argv[0] (default: [unknown])
+# -aP --as=PROG     sys.argv[0] (default: [pyr TARGET])
 # -pX --path=X      append colon-separated dirs to sys.path
 #     --py=PY       absolute/relative/$PATH Python (default: python3)
 # -2Y               --python=python2[Y] (eg. -2)
 # -3Y               --python=python3[Y] (eg. -3.6)
-#     --silent      don't print tracebacks for KeyboardInterrupt, BrokenPipeError
+#     --signal-tb   print tracebacks for (some) signal exits
 ## FUTURE: rename --silent? interaction with --optimize=off?
 #     --interact=T  use T for console (default pyr.interact)
 #
@@ -57,7 +57,7 @@ squote() {
 as=
 dirs=
 python=python3
-silent=false
+signal_tb=false
 interact=pyr.interact
 py_bytecode=
 py_env=-E
@@ -108,9 +108,9 @@ handle_option() {
         2|3)
             python="python$1${2-}"
             ;;
-        silent)
+        signal-tb)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            silent=true
+            signal_tb=true
             ;;
         interact)
             [ $# = 2 ] || fatal 64 "missing value for option $1"
@@ -214,7 +214,7 @@ del sys.argv[0]
 del sys.path[0]
 #bootstrap
 sys.path.append(sys.argv.pop(0))
-import pyr._bootstrap
-pyr._bootstrap.go(sys.argv)
+from pyr import _bootstrap
+_bootstrap(sys.argv)
 '\' $(squote "$(dirname "$(readlink -f "$0")")/py3") \
-"$silent" "$(squote "$dirs" "$target" "${as:-[unknown]}" "$@")"
+"$signal_tb" "$(squote "$dirs" "$target" "${as:-[pyr $target]}" "$@")"

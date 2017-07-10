@@ -1,0 +1,4 @@
+#!/bin/sh -ue
+pid=$$
+(sleep 1; kill -int $pid) &
+exec "$@"

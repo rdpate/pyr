@@ -1,5 +1,11 @@
 all: pyr-standalone
 
-pyr-standalone: pyr py3/pyr/_bootstrap.py util/standalone
+clean:
+	find */ -type d -name __pycache__ -delete
+	find . -type f -name '*.py[oc]' -delete
+	rm -f pyr-standalone
+
+
+pyr-standalone: pyr py3/pyr/__init__.py util/standalone
 	util/standalone >$@
 	chmod +x $@
