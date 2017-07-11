@@ -38,12 +38,12 @@ Pyr provides a simple interactive interpreter nearly identical to Python's nativ
 Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP is always ignored; to get something similar, write a function which calls pyr.interact with a dict third argument:
 
     import pyr
-    def custom_console(opts, args):
-        import datetime, sys, re, whatever
+    def main(opts, args):
+        import datetime, sys, re
         now = datetime.datetime.now()
         return pyr.interact(opts, args, locals())
 
-Copy doc/custom-interact (eg. to ~/cmd/pyr) and modify it with the path to Pyr and the path plus name to the above module.
+Copy doc/custom-interact (eg. to ~/cmd/pyr) and modify it with the path to Pyr and the path to the above module.
 
 ## Project Pyr
 

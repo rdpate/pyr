@@ -1,11 +1,11 @@
 #!/bin/sh -ue
 #.help
-# Run Pyr with custom arguments for an interactive console.
+# Run Pyr with custom interactive console.
 
 # modify these variables:
-pyr=".../pyr"
-interact_path=".../contains-custom-module"
-interact_entry="MODULE.FUNCTION"
+pyr="$(dirname "$0")/../pyr"
+interact_path="$0-lib"
+interact_main="_user_custom_interact"
 
 
 is_interact() {
@@ -20,6 +20,6 @@ is_interact() {
     [ $# = 0 ] || [ x"$1" = x- ]
 }
 if is_interact "$@"; then
-    set -- -p"$interact_path" --interact="$interact_entry" "$@"
+    set -- -p"$interact_path" --interact="$interact_main" "$@"
 fi
 exec "$pyr" "$@"
