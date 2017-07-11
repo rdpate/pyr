@@ -1,6 +1,6 @@
 #!/bin/sh -ue
 #.version
-# 0.1.0
+# 0.1.2
 #.help
 # pyr [TARGET [OPT..] [ARG..]]
 #
@@ -12,8 +12,8 @@
 # -aP --as=PROG             sys.argv[0] (default: [pyr TARGET])
 # -pX --path=X              append colon-separated dirs to sys.path
 #     --py=PY               absolute/relative/$PATH Python (default: python3)
-# -2Y                       --python=python2[Y] (eg. -2)
-# -3Y                       --python=python3[Y] (eg. -3.6)
+# -2Y                       --py=python2[Y] (eg. -2)
+# -3Y                       --py=python3[Y] (eg. -3.6)
 #     --signal-tb           print tracebacks for (some) signal exits
 ## FUTURE: signal-tb value to list signals that print traceback?
 #     --interact=T          use T for console (default pyr.interact)

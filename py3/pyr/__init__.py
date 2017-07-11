@@ -1,8 +1,8 @@
 # code must be compatible across all supported Python versions:
 #   2.7, 3.4, 3.5, 3.6
 # (other Python versions may work)
-
 # code must be able to be included in shell script within single quotes
+__version__ = "0.1.2"
 
 import importlib
 import os

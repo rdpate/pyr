@@ -165,3 +165,13 @@ Python can lose exceptions with confusing errors, but Pyr does not:
       File ".../doc/date.py", line 5, in main
         print("{:%Y-%m-%d_%H:%M:%S}".format(datetime.datetime.utcnow()))
     BrokenPipeError: [Errno 32] Broken pipe
+
+
+## Installation
+
+Pyr cannot be installed as is normal for Python packages.  Without --site, the pyr command couldn't even import a pip-installed pyr module!
+
+<!--
+TODO: installation instructions
+TODO: find a way to upload something to pypi
+-->
