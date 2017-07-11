@@ -7,8 +7,8 @@ Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and 
 
 ## Quick Example
 
-    $ mkdir bin py3
-    $ cat >bin/show <<END
+    $ mkdir cmd py3
+    $ cat >cmd/show <<END
     #!/bin/sh -ue
     exec .../pyr -a"$0" -3.6 --path="$(dirname "$0")/../py3" example "$@"
     END
@@ -19,9 +19,9 @@ Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and 
         print(opts)
         print(args)
     END
-    $ chmod +x bin/show
-    $ ./bin/show -a -b1 --cc --dd= --ee=2 foo 'bar baz'
-    ['./bin/show', '-a', '-b1', '--c', '--d=', '--e=2', 'foo', 'bar baz']
+    $ chmod +x cmd/show
+    $ ./cmd/show -a -b1 --cc --dd= --ee=2 foo 'bar baz'
+    ['./cmd/show', '-a', '-b1', '--c', '--d=', '--e=2', 'foo', 'bar baz']
     [('a', None), ('b', '1'), ('cc', None), ('dd', ''), ('ee', '2')]
     ['foo', 'bar baz']
 
@@ -39,13 +39,11 @@ Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP 
 
     import pyr
     def custom_console(opts, args):
-        import sys, re, whatever
+        import datetime, sys, re, whatever
+        now = datetime.datetime.now()
         return pyr.interact(opts, args, locals())
 
-Save the code as a module and tell Pyr about it with a stub (eg. ~/bin/pyr):
-
-    #!/bin/sh -ue
-    exec .../pyr -p.../contains-above-module --interact=MODULE.custom_console "$@"
+Copy doc/custom-interact (eg. to ~/cmd/pyr) and modify it with the path to Pyr and the path plus name to the above module.
 
 ## Project Pyr
 
