@@ -4,15 +4,67 @@ import sys
 from . import optics
 
 
+_examples = []
+def _example(f):
+    _examples.append((f.__name__, f))
+    return f
+
+@_example
+def main(opts, args):
+    """ %
+
+    List examples.
+
+    Options:
+        --sort          sort examples
+        --short         show help synopsis only
+    """
+    opt_map = {
+        "sort": optics.store_true,
+        "short": optics.store_true,
+        }
+    opts = optics.parse_opts(opts, opt_map)
+    if args:
+        raise optics.unknown_args()
+    examples = _examples
+    if opts.get("sort"):
+        examples = sorted(examples)
+    for name, f in examples:
+        doc = f.__doc__
+        if not doc:
+            print(name)
+        else:
+            doc = doc.strip().splitlines()
+            first = doc[0]
+            assert first.startswith("%"), repr(first)
+            if first.startswith("% "):
+                first = first[2:]
+                print(name + " " + first)
+            else:
+                assert first == "%", repr(first)
+                print(name)
+            if not opts.get("short") and len(doc) > 1:
+                assert doc[1] == "", (name, doc[1])
+                del doc[0:2]
+                print("\n".join(doc))
+
+@_example
 def show(opts, args):
-    """example from readme.md"""
+    """% [OPT..] [ARG..]
+
+    (example from readme.md)
+    """
     print(sys.argv)
-    print("")  # PY2 compatible
     print(opts)
     print(args)
 
 
+@_example
 def showargs(opts, args):
+    """% [OPT..] [ARG..]
+
+    Show options and arguments.
+    """
     for name, value in opts:
         s = "option " + name
         if value is not None:
@@ -29,7 +81,12 @@ def squote(s):
     if all(c in SQUOTE_SAFE_CHARS for c in s):
         return s
     return "'" + s.replace("'", "'\\''") + "'"
+@_example
 def reconstruct(opts, args):
+    """% [OPT..] [ARG..]
+
+    Reconstruct command line.
+    """
     argv = [sys.argv[0]]
     for n, v in opts:
         if len(n) == 1:
@@ -47,13 +104,19 @@ def reconstruct(opts, args):
     print(argv)
 
 
+@_example
 def head(opts, args):
+    """% [FILE..]
+
+    Options:
+    -nL --lines=L       show first L lines (default 10)
+    """
     opt_map = {
         "n": "lines",
-        "lines": optics.nonneg_int,
+        "lines": optics.pos_int,
         }
     def shortcut_int(name, value):
-        return optics.nonneg_int(name, name + (value or ""))
+        return optics.pos_int(name, name + (value or ""))
     for x in "123456789":
         opt_map[x] = ("lines", shortcut_int)
     lines = optics.parse_opts(opts, opt_map).get("lines", 10)
