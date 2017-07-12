@@ -92,6 +92,7 @@ def store_false(name, value):
     return False
 
 def integer(name, value):
+    """allow any base 10 integer"""
     if not value:
         raise missing_value(name)
     if value.startswith("-"):
@@ -102,11 +103,22 @@ def integer(name, value):
         raise Exit("usage", "expected integer for option " + name)
     return int(value)
 def nonneg_int(name, value):
+    """allow zero and positive base 10 integers"""
     if not value:
         raise missing_value(name)
     if not all(c in "0123456789" for c in value):
-        raise Exit("usage", "expected (non-negative) integer for option " + name)
+        raise Exit("usage", "expected non-negative integer for option " + name)
     return int(value)
+def pos_int(name, value):
+    """allow positive base 10 integers"""
+    if not value:
+        raise missing_value(name)
+    if not all(c in "0123456789" for c in value):
+        raise Exit("usage", "expected positive integer for option " + name)
+    value = int(value)
+    if value == 0:
+        raise Exit("usage", "expected positive integer for option " + name)
+    return value
 
 def raw_list(name, value, prev):
     """create list of raw values"""
