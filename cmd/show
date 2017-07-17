@@ -1,3 +1,2 @@
 #!/bin/sh -ue
-base="$(dirname "$0")/.."
-exec "$base/pyr" -a"$0" --path="$base/py3" pyr.examples."$(basename "$0")" "$@"
+exec "$(dirname "$0")/../util/pyr" -a"$0" pyr.examples."$(basename "$0")" "$@"

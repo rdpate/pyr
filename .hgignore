@@ -1,4 +1,1 @@
-syntax: glob
-*.pyo
-*.pyc
-pyr-standalone
+^cmd/pyr-standalone$

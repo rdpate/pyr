@@ -1,6 +1,6 @@
 #!/bin/sh -ue
 #.version
-# 0.1.2
+# 0.1.3-dev
 #.help
 # pyr [TARGET [OPT..] [ARG..]]
 #
@@ -233,5 +233,5 @@ del sys.path[0]
 sys.path.append(sys.argv.pop(0))
 from pyr import _bootstrap
 _bootstrap(sys.argv)
-'\' $(squote "$(dirname "$(readlink -f "$0")")/py3") \
+'\' $(squote "$(dirname "$(readlink -f "$0")")/../py3") \
 "$signal_tb" "$(squote "$dirs" "$site" "$target" "${as:-[pyr $target]}" "$@")"

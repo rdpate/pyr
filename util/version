@@ -34,7 +34,7 @@ fi
 
 
 cd "$(dirname "$0")/.."
-version="$(head -n3 pyr | tail -n1 | cut -d' ' -f2)"
+version="$(head -n3 cmd/pyr | tail -n1 | cut -d' ' -f2)"
 module_version="$(grep __version__ py3/pyr/__init__.py | cut -d\" -f2)"
 [ -n "$module_version" ] || fatal 70 'failed reading module version'
 
