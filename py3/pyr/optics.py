@@ -2,6 +2,7 @@
 # code must be compatible across all supported Python versions
 
 import inspect
+import os
 import signal
 import sys
 
