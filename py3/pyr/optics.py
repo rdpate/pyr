@@ -218,18 +218,27 @@ def pure_path(name, value):
 def _needs_prev(f):
     return len(inspect.getargspec(f).args) != 2
 
+class OptionAttrs:
+    """use attributes instead of items with parse_opts"""
+    def __getitem__(self, key):
+        return getattr(self, key.replace("-", "_"), None)
+    def __setitem__(self, key, value):
+        setattr(self, key.replace("-", "_"), value)
+
 def parse_opts(opts, opt_map, out=None):
     """parse options through functions from opt_map
 
     If out is None, it becomes a new dict.
 
     For each (name, raw) in opts, depending on opt_map.get(name) as X:
-    * function: out[name] = X(name, raw, out.get(name))
-    * tuple of (other, func): out[other] = func(name, raw, out.get(other))
-    * str: out[X] = opt_map[X](name, raw, out.get(X))
+    * function: out[name] = X(name, raw, out[name])
+    * tuple of (other, func): out[other] = func(name, raw, out[other])
+    * str: out[X] = opt_map[X](name, raw, out[X])
     * None: raise unknown_option(name)
 
-    For every call above, if len(inspect.getargspec(func).args) == 2, then the third parameter will be elided.
+    For every call above:
+    * if len(inspect.getargspec(func).args) == 2, then the third parameter will be elided
+    * else if out[...] raises KeyError, then None will be used instead
 
     That functions can use the previous value but not access other options' values is intentional.
     """
@@ -249,7 +258,11 @@ def parse_opts(opts, opt_map, out=None):
             target = name
         assert callable(f), f
         if _needs_prev(f):
-            out[target] = f(name, value, out.get(target))
+            try:
+                prev = out[target]
+            except KeyError:
+                prev = None
+            out[target] = f(name, value, prev)
         else:
             out[target] = f(name, value)
     return out
