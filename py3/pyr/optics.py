@@ -136,38 +136,87 @@ def list_of(function):
         return prev
     return f
 
-def existing_path(name, value):
+def default(default, function):
+    """use default for missing value, otherwise call function
+
+    Implements "--N[=V]" and "-N[V]".  Note difference from "--N=[V]".
+    """
+    if _needs_prev(function):
+        def f(name, value, prev):
+            if value is None:
+                return default
+            return function(name, value, prev)
+    else:
+        def f(name, value):
+            if value is None:
+                return default
+            return function(name, value)
+    return f
+
+def _set_attr(target):
+    def decorate(f):
+        setattr(target, f.__name__, f)
+        return f
+    return decorate
+def _path_attrs(f):
+    @_set_attr(f)
+    def absolute(name, value):
+        value = f(name, value)
+        return value.absolute()
+    @_set_attr(f)
+    def resolve(name, value):
+        value = f(name, value)
+        return value.resolve()
+    @_set_attr(f)
+    def exists(name, value):
+        p = f(name, value)
+        if not p.exists():
+            raise Exit("noinput", "no such path: " + value)
+        return value
+    return f
+@_path_attrs
+def path(name, value):
     if not value:
         raise missing_value(name)
-    if not os.path.exists(value):
-        raise Exit("noinput", "no such path: " + value)
     return pathlib.Path(value)
-def existing_filename(name, value):
-    if not value:
-        raise missing_value(name)
-    if not os.path.exists(value):
-        raise Exit("noinput", "no such path: " + value)
-    if not os.path.isfile(value):
+@_path_attrs
+def filename(name, value):
+    p = path(name, value)
+    if p.exists() and not p.is_file():
         raise Exit("noinput", "not a file: " + value)
-    return pathlib.Path(value)
-def existing_dir(name, value):
+    return p
+@_path_attrs
+def directory(name, value):
+    p = path(name, value)
+    if p.exists() and not p.is_dir():
+        raise Exit("noinput", "not a directory: " + value)
+    return p
+@_path_attrs
+def command(name, value):
+    """filename.exists if "/" in value, else search os.environ["PATH"]
+
+    Does NOT check if file is executable.
+    """
     if not value:
         raise missing_value(name)
-    if not os.path.exists(value):
-        raise Exit("noinput", "no such path: " + value)
-    if not os.path.isdir(value):
-        raise Exit("noinput", "not a directory: " + value)
-    return pathlib.Path(value)
+    if "/" in value:
+        return filename.exists(name, value)
+    x = os.environ.get("PATH")
+    if x is None:
+        raise Exit("noinput", "cannot lookup command without PATH: " + value)
+    for x in x.split(":"):
+        x = pathlib.Path(x, value)
+        if x.exists():
+            return x
+    raise Exit("noinput", "no such command: " + value)
 
 def pure_path(name, value):
     if not value:
         raise missing_value(name)
     return pathlib.PurePath(value)
-def path(name, value):
-    if not value:
-        raise missing_value(name)
-    return pathlib.Path(value)
 
+def _needs_prev(f):
+    return len(inspect.getargspec(f).args) != 2
 
 def parse_opts(opts, opt_map, out=None):
     """parse options through functions from opt_map
@@ -180,7 +229,7 @@ def parse_opts(opts, opt_map, out=None):
     * str: out[X] = opt_map[X](name, raw, out.get(X))
     * None: raise unknown_option(name)
 
-    For every call above, if len(inspect.getargspec(func).args) == 2, then func will be called with 2 parameters instead of 3.
+    For every call above, if len(inspect.getargspec(func).args) == 2, then the third parameter will be elided.
 
     That functions can use the previous value but not access other options' values is intentional.
     """
@@ -199,8 +248,8 @@ def parse_opts(opts, opt_map, out=None):
         else:
             target = name
         assert callable(f), f
-        if len(inspect.getargspec(f).args) == 2:
-            out[target] = f(name, value)
-        else:
+        if _needs_prev(f):
             out[target] = f(name, value, out.get(target))
+        else:
+            out[target] = f(name, value)
     return out
