@@ -27,8 +27,8 @@
 #     --optimize=doc        Python -OO
 #     --no-site             Python -S (default)
 # -s  --site[=user,sys]     append user/system site dirs after --path
-#     --buffer=off          Python -u (default)
-#     --buffer[=on]         no Python -u
+# -u  --buffer=off          Python -u
+#     --buffer[=on]         no Python -u (default)
 # -WT --warn=T              Python -WT
 # -XT                       Python -XT
 #     --prepend=RAW         prepend RAW to interpreter args
@@ -63,7 +63,7 @@ site=
 py_bytecode=
 py_env=-E
 py_optimize=-O
-py_unbuffered=-u
+py_unbuffered=
 py_warn=
 py_x=
 py_prepend=
@@ -163,6 +163,10 @@ handle_option() {
                     shift
                 done
             fi
+            ;;
+        u)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_unbuffered=-u
             ;;
         buffer)
             case "${2-on}" in
