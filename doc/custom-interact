@@ -2,10 +2,14 @@
 #.help
 # Run Pyr with custom interactive console.
 
-# modify these variables:
+### Modify these variables:
+# path to Pyr
 pyr="$(dirname "$0")/../pyr"
+# directory containing interact_main (and any others desired) added to sys.path
 interact_path="$0-lib"
-interact_main="_user_custom_interact"
+# entry point
+interact_main="user_console"
+###
 
 
 is_interact() {

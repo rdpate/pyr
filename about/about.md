@@ -3,7 +3,8 @@ Pyr
 
     pyr [TARGET [OPT..] [ARG..]]
 
-Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and "pythonXY -mmodule".  Put code into modules!  Pyr parses options consistently and uniformly, replacing optparse and argparse.
+Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and "pythonXY -mmodule".  Put code into modules!  Pyr parses options consistently and uniformly, replacing optparse and argparse.  By default, Pyr has Python ignore environment variables, optimize code, and without site packages or user/sitecustomize modules.
+
 
 ## Quick Example
 
@@ -24,6 +25,8 @@ Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and 
     ['./cmd/show', '-a', '-b1', '--c', '--d=', '--e=2', 'foo', 'bar baz']
     [('a', None), ('b', '1'), ('cc', None), ('dd', ''), ('ee', '2')]
     ['foo', 'bar baz']
+
+In particular while getting started with Pyr:  Use --optimize=off to execute asserts.  Use -s to include user and system site directories until your path directories are sorted.
 
 ## Options & Arguments
 
