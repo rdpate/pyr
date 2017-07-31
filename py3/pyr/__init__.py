@@ -2,8 +2,9 @@
 #   2.7, 3.4, 3.5, 3.6
 # (other Python versions may work)
 # code must be able to be included in shell script within single quotes
-__version__ = "0.1.3-dev"
+__version__ = "0.1.3"
 
+import errno
 import importlib
 import os
 import signal
@@ -91,9 +92,11 @@ def register_exit_signal(signum, exception=None):
     signal.signal(signum, exit_signal)
 
 
-def _print_exception(e):
+def _print_exception():
     sys.stderr.write("{} error...\n".format(sys.argv[0]))
-    traceback.print_exception(type(e), e, sys.exc_info()[2].tb_next)
+    ty, val, tb = sys.exc_info()
+    tb = tb.tb_next
+    traceback.print_exception(ty, val, tb)
 
 def _append_site(types):
     import site
@@ -179,51 +182,43 @@ def _get_target(target):
             sys.exit(70)
     return target
 
-def _bootstrap(argv):
-    # PY2: lacks BrokenPipeError, handled in as IOError below, but this avoids NameError later
-    try:
-        BrokenPipeError
-    except NameError:
-        class BrokenPipeError(Exception):
-            pass
-        from errno import EPIPE
-    else:
-        EPIPE = object()
 
+def _bootstrap(argv):
     signal_tb = (argv.pop(0) == "true")
+    exit = None
     try:
-        try:
-            target, opts, args = _bootstrap_setup(argv)
-            sys.exit(target(opts, args))
-        except KeyboardInterrupt as e:
-            if signal_tb:
-                _print_exception(e)
-            exit = 128 + signal.SIGINT
-        except BrokenPipeError as e:
-            if signal_tb:
-                _print_exception(e)
-            exit = 128 + signal.SIGPIPE
-        except IOError as e:
-            # PY2: lacks BrokenPipeError
-            if e.errno == EPIPE:
-                if signal_tb:
-                    _print_exception(e)
-                exit = 128 + signal.SIGPIPE
-            else:
-                _print_exception(e)
-                exit = 1
-        except SystemExit as e:
-            exit = e.code
-            message = getattr(e, "message", None)
-            if message:
-                sys.stderr.write("{} error: {}\n".format(sys.argv[0], message))
-            elif not isinstance(exit, (int, type(None))):
-                sys.stderr.write("{} error: {}\n".format(sys.argv[0], exit))
-                exit = 1
-        except BaseException as e:
-            _print_exception(e)
-            exit = 1
+        target, opts, args = _bootstrap_setup(argv)
+        exit = target(opts, args)
+        if not exit:
+            if sys.stdout is not None:
+                sys.stdout.flush()
+            if sys.stderr is not None:
+                sys.stderr.flush()
         sys.exit(exit)
+    except KeyboardInterrupt:
+        if signal_tb:
+            _print_exception()
+        exit = 128 + signal.SIGINT
+    except IOError as e:
+        # PY2: lacks BrokenPipeError, but this works in 3.x too
+        if e.errno == errno.EPIPE:
+            if signal_tb:
+                _print_exception()
+            exit = 128 + signal.SIGPIPE
+        else:
+            _print_exception()
+            exit = 1
+    except SystemExit as e:
+        exit = e.code
+        message = getattr(e, "message", None)
+        if message:
+            sys.stderr.write("{} error: {}\n".format(sys.argv[0], message))
+        elif not isinstance(exit, (int, type(None))):
+            sys.stderr.write("{} error: {}\n".format(sys.argv[0], exit))
+            exit = 1
+    except BaseException:
+        _print_exception()
+        exit = 1
     finally:
         try:
             if sys.stdout is not None:
@@ -238,3 +233,4 @@ def _bootstrap(argv):
                         sys.stderr.flush()
                     finally:
                         sys.stderr.close()
+                        sys.exit(exit)

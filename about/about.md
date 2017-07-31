@@ -99,18 +99,24 @@ Use doc/yes.py to see differences from SIGPIPE:
 
     $ pyr -3.6 -pdoc yes | head -n1
     y
+
+    $ pyr -2.7 -pdoc yes | head -n1
+    y
+
     $ python3.6 doc/yes.py | head -n1
     y
     Traceback (most recent call last):
+      File "doc/yes.py", line 8, in <module>
+        sys.exit(main([], []))
       File "doc/yes.py", line 5, in <module>
         print("y")
     BrokenPipeError: [Errno 32] Broken pipe
 
-    $ pyr -2.7 -pdoc yes | head -n1
-    y
     $ python2.7 doc/yes.py | head -n1
     y
     Traceback (most recent call last):
+      File "doc/yes.py", line 8, in <module>
+        sys.exit(main([], []))
       File "doc/yes.py", line 5, in <module>
         print("y")
     IOError: [Errno 32] Broken pipe
@@ -123,7 +129,7 @@ Use doc/yes.py to see differences from SIGPIPE:
         print("y")
     BrokenPipeError: [Errno 32] Broken pipe
 
-Use doc/sigint to see differences from SIGINT:
+Use doc/sigint and doc/sleep.py to see differences from SIGINT:
 
     $ doc/sigint pyr -3.6 -pdoc sleep; echo $?
     130
@@ -132,7 +138,7 @@ Use doc/sigint to see differences from SIGINT:
     [pyr sleep] error...
     Traceback (most recent call last):
       File ".../doc/sleep.py", line 5, in main
-        time.sleep(1)
+        time.sleep(600)
     KeyboardInterrupt
     130
 
@@ -160,19 +166,17 @@ Python can lose exceptions with confusing errors, but Pyr does not:
     sys.excepthook is missing
     lost sys.stderr
 
-    $ pyr -3.6 --signal-tb -pdoc date | :
-    [pyr date] error...
-    Traceback (most recent call last):
-      File ".../doc/date.py", line 5, in main
-        print("{:%Y-%m-%d_%H:%M:%S}".format(datetime.datetime.utcnow()))
-    BrokenPipeError: [Errno 32] Broken pipe
-
 
 ## Installation
 
-Pyr cannot be installed as is normal for Python packages.  Without --site, the pyr command couldn't even import a pip-installed pyr module!
+Pyr runs Python rather than the other way around.  Install Pyr by cloning the repository or unpacking an archive, then symlink cmd/pyr into $PATH:
 
-<!--
-TODO: installation instructions
-TODO: find a way to upload something to pypi
--->
+    hg clone https://bitbucket.org/rdpate/pyr
+    # or
+    wget -Opyr.tar.gz https://bitbucket.org/rdpate/pyr/get/@.tar.gz
+    mkdir pyr
+    tar -x -z -Cpyr --strip-components=1 -fpyr.tar.gz
+    rm -r pyr/util pyr.tar.gz
+
+    ln -s "$PWD/pyr/cmd/pyr" ~/cmd/pyr
+    # if ~/cmd is in $PATH
