@@ -180,12 +180,15 @@ def _get_target(target):
     return target
 
 def _bootstrap(argv):
-    # PY2: lacks BrokenPipeError, handled in except IOError below, but this avoids NameError
+    # PY2: lacks BrokenPipeError, handled in as IOError below, but this avoids NameError later
     try:
         BrokenPipeError
     except NameError:
         class BrokenPipeError(Exception):
             pass
+        from errno import EPIPE
+    else:
+        EPIPE = object()
 
     signal_tb = (argv.pop(0) == "true")
     try:
@@ -202,8 +205,7 @@ def _bootstrap(argv):
             exit = 128 + signal.SIGPIPE
         except IOError as e:
             # PY2: lacks BrokenPipeError
-            import errno
-            if e.errno == errno.EPIPE:
+            if e.errno == EPIPE:
                 if signal_tb:
                     _print_exception(e)
                 exit = 128 + signal.SIGPIPE
