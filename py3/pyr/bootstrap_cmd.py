@@ -43,8 +43,22 @@ def main(opts, args):
 
     with open(os.path.join(os.path.dirname(__file__), "stub-sh")) as f:
         lines = list(f)
-    with open(pyr_script, "x") as f:
+    help_file = os.path.join(os.path.dirname(__file__), "pyr-help.en.txt")
+    if not os.path.exists(help_file):
         help_text = ""
+        print("omitting help text from script (help file not found)")
+    else:
+        with open(help_file) as f:
+            help_text = ["#.help\n"]
+            for line in f:
+                if line == "\n" or line.startswith("#"):
+                    line = "#" + line
+                else:
+                    line = "# " + line
+                help_text.append(line)
+            help_text = "".join(help_text)
+        print("including help text in script")
+    with open(pyr_script, "x") as f:
         f.write("""\
 #!/bin/sh -ue
 #.version
