@@ -33,16 +33,14 @@ def main(opts, args):
     else:
         os.mkdir(pyr_path)
         print("created directory {}".format(pyr_path))
-    pyr_path = os.path.join(pyr_path, "pyr")
-    if os.path.exists(pyr_path):
-        print("skipping creation of {}".format(pyr_path))
+    pyr_path_pyr = os.path.join(pyr_path, "pyr")
+    if os.path.exists(pyr_path_pyr):
+        print("skipping creation of {}".format(pyr_path_pyr))
     else:
         src = "../../" + pyr_name
-        os.symlink(src, pyr_path)
-        print("created symlink {} to {}".format(pyr_path, src))
+        os.symlink(src, pyr_path_pyr)
+        print("created symlink {} to {}".format(pyr_path_pyr, src))
 
-    with open(os.path.join(os.path.dirname(__file__), "stub-sh")) as f:
-        lines = list(f)
     help_file = os.path.join(os.path.dirname(__file__), "pyr-help.en.txt")
     if not os.path.exists(help_file):
         help_text = ""
@@ -65,9 +63,8 @@ def main(opts, args):
 # {}
 {}\
 pyr_path='{}'
+. "$pyr_path/pyr/stub-sh"
 """.format(__version__, help_text, pyr_path))
-        for x in lines:
-            f.write(x)
         mode = os.stat(f.fileno()).st_mode
         for shift in 0, 3, 6:
             if mode & (4 << shift):
