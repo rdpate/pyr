@@ -17,11 +17,12 @@ def main(opts, args):
 
     Options:
         --sort          sort examples
-        --short         show help synopsis only
+    -s  --short         show help synopsis only
     """
     opt_map = {
         "sort": optics.store_true,
         "short": optics.store_true,
+        "s": "short",
         }
     opts = optics.parse_opts(opts, opt_map)
     if args:
@@ -110,14 +111,15 @@ def head(opts, args):
 
     Options:
     -nL --lines=L       show first L lines (default 10)
+    -##                 --lines=## (where ## >= 0)
     """
     opt_map = {
         "n": "lines",
-        "lines": optics.pos_int,
+        "lines": optics.nonneg_int,
         }
     def shortcut_int(name, value):
-        return optics.pos_int(name, name + (value or ""))
-    for x in "123456789":
+        return optics.nonneg_int(name, name + (value or ""))
+    for x in "0123456789":
         opt_map[x] = ("lines", shortcut_int)
     lines = optics.parse_opts(opts, opt_map).get("lines", 10)
 
@@ -133,6 +135,8 @@ def head(opts, args):
                 close = True
             if len(args) > 1:
                 print("==> {} <==".format(filename))
+            if lines == 0:
+                continue
             for n, line in enumerate(f, start=1):
                 sys.stdout.write(line)
                 if n == lines:
