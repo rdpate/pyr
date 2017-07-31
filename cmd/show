@@ -1,2 +1,0 @@
-#!/bin/sh -ue
-exec "$(dirname "$0")/../util/pyr" -a"$0" pyr.examples."$(basename "$0")" "$@"

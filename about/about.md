@@ -28,6 +28,20 @@ Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and 
 
 In particular while getting started with Pyr:  Use --optimize=off to execute asserts.  Use -s to include user and system site directories until your path directories are sorted.
 
+## Installation
+
+Pyr runs Python rather than the other way around.  Install Pyr by cloning the repository or unpacking an archive, then symlink cmd/pyr into $PATH:
+
+    hg clone https://bitbucket.org/rdpate/pyr
+    # or
+    wget -Opyr.tar.gz https://bitbucket.org/rdpate/pyr/get/@.tar.gz
+    mkdir pyr
+    tar -x -z -Cpyr --strip-components=1 -fpyr.tar.gz
+    rm -r pyr/util pyr.tar.gz
+
+    ln -s "$PWD/pyr/cmd/pyr" ~/cmd/pyr
+    # if ~/cmd is in $PATH
+
 ## Options & Arguments
 
 Options must come before all arguments.  All options follow identical syntax in two flavors: short and long.  Short options start with a single hyphen and are named with a single character followed by the value, if any.  Long options start with double hyphens, separate the name and value with equals ("="), and allow distinguishing an empty value from no value.  Any short option may be specified as a long option with a single-character name (eg. --a, --b=X).
@@ -55,8 +69,7 @@ Create a project utility command to localize Pyr settings:
     #!/bin/sh -ue
     # use -p with one or more directories to append to sys.path
     # eg. the project's Python module directory (relative path from $0)
-    exec .../pyr -p"$(basename "$0")/py3" "$@"
-    # specify path to pyr or pyr-standalone (see Standalone Pyr)
+    exec pyr -p"$(basename "$0")/../py3" "$@"
 
 Run without args for an interactive console or supply TARGET, either way project-specific directories and settings are applied.  Individual stubs can hook into your Python code simply:
 
@@ -65,10 +78,6 @@ Run without args for an interactive console or supply TARGET, either way project
     # and this script is one level below PROJECT
     exec "$(dirname "$(readlink -f "$0")")/../util/pyr" -a"$0" TARGET "$@"
     # readlink lets any symlinks to the stub work correctly
-
-## Standalone Pyr
-
-Make pyr-standalone for a single-file Pyr without dependencies.  Standalone does not have pyr.optics.
 
 ## Consistent Error Messages
 
@@ -165,18 +174,3 @@ Python can lose exceptions with confusing errors, but Pyr does not:
     close failed in file object destructor:
     sys.excepthook is missing
     lost sys.stderr
-
-
-## Installation
-
-Pyr runs Python rather than the other way around.  Install Pyr by cloning the repository or unpacking an archive, then symlink cmd/pyr into $PATH:
-
-    hg clone https://bitbucket.org/rdpate/pyr
-    # or
-    wget -Opyr.tar.gz https://bitbucket.org/rdpate/pyr/get/@.tar.gz
-    mkdir pyr
-    tar -x -z -Cpyr --strip-components=1 -fpyr.tar.gz
-    rm -r pyr/util pyr.tar.gz
-
-    ln -s "$PWD/pyr/cmd/pyr" ~/cmd/pyr
-    # if ~/cmd is in $PATH
