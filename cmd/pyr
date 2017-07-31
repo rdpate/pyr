@@ -1,3 +1,208 @@
 #!/bin/sh -ue
-pyr_path="$(dirname "$(readlink -f "$0")")/../py3"
-. "$pyr_path/pyr/stub-sh"
+
+fatal() {
+    printf %s\\n "$(basename "$0") error: $2" >&2
+    exit "$1"
+}
+is_digits() {
+    local x; for x; do case "$x" in *[!0-9]*|'') return 1 ;; *) ;; esac done
+}
+is_integer() {
+    local x; for x; do case "$x" in -*) is_digits "${x#-}" || return 1 ;; *[!0-9]*|'') return 1 ;; *) ;; esac done
+}
+squote() {
+    while true; do
+        printf \'%s\' "$(printf %s "$1" | sed -r s/\'/\'\\\\\'\'/g)"
+        shift
+        case $# in
+            0) break ;;
+            *) printf ' ' ;;
+        esac
+    done
+}
+
+as=
+dirs=
+python=python3
+signal_tb=false
+interact=pyr.interact
+site=
+py_bytecode=
+py_env=-E
+py_optimize=-O
+py_unbuffered=
+py_warn=
+py_x=
+py_prepend=
+handle_option() {
+    local x p f
+    case "$1" in
+        # add options here, with common checks:
+            #[ $# = 2 ] || fatal 64 "missing value for option $1"
+            #[ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            #is_digits "$2" || fatal 64 "expected (non-negative) integer for option $1"
+            #is_integer "$2" || fatal 64 "expected integer for option $1"
+        # less commonly useful:
+            #[ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            # $2 is only empty for "--long-option=" (equals with no following value)
+        a|as)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            as="$2"
+            ;;
+        p|path)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            x="$2"
+            while [ -n "$x" ]; do
+                p="${x%%:*}"
+                if [ x"$p" = x"$x" ]; then
+                    x=
+                else
+                    x="${x#*:}"
+                fi
+                if [ -z "$p" ]; then
+                    fatal 64 "empty --path component"
+                fi
+                f="$(readlink -f -- "$p")" || fatal 64 "missing --dir: $p"
+                dirs="$dirs:$f"
+            done
+            ;;
+        py)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            python="$2"
+            ;;
+        2|3)
+            python="python$1${2-}"
+            ;;
+        signal-tb)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            signal_tb=true
+            ;;
+        interact)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            interact="$2"
+            ;;
+
+        no-bytecode)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_bytecode=-B
+            ;;
+        e|py-env)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_env=
+            ;;
+        E|no-py-env)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_env=-E
+            ;;
+        optimize)
+            case "${2-on}" in
+                on)     py_optimize=-O      ;;
+                off)    py_optimize=        ;;
+                doc)    py_optimize=-OO     ;;
+                *) fatal 64 "unknown value for option $1" ;;
+            esac
+            ;;
+        no-site)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            site=
+            ;;
+        s|site)
+            if [ $# = 1 ]; then
+                site=user,sys
+            elif [ -z "$2" ]; then
+                site=
+            else
+                site=
+                set -- "$2"
+                while [ $# != 0 ]; do
+                    case "$1" in
+                        *,*) set -- "${1%%,*}" "${1#*,}"
+                    esac
+                    case "$1" in
+                        user) site="${site:+$site,}user" ;;
+                        sys) site="${site:+$site,}sys" ;;
+                        '') fatal 64 'empty --site item' ;;
+                        *) fatal 64 "unknown --site item: $1" ;;
+                    esac
+                    shift
+                done
+            fi
+            ;;
+        u)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_unbuffered=-u
+            ;;
+        buffer)
+            case "${2-on}" in
+                off)    py_unbuffered=-u    ;;
+                on)     py_unbuffered=      ;;
+                *) fatal 64 "unknown value for option $1" ;;
+            esac
+            ;;
+        W)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            py_warn="$py_warn -W$(squote "$2")"
+            ;;
+        X)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
+            py_x="$py_x -X$(squote "$2")"
+            ;;
+        prepend)
+            [ $# = 2 ] || fatal 64 "missing value for option $1"
+            py_prepend="$py_prepend $(squote "$2")"
+            ;;
+
+        *) fatal 64 "unknown option $1" ;;
+    esac
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --) shift; break ;;
+        --*=*) x="${1#--}"; handle_option "${x%%=*}" "${x#*=}"; shift ;;
+        --*) handle_option "${1#--}"; shift ;;
+        -?) handle_option "${1#-}"; shift ;;
+        -?*)
+            v="${1#??}"
+            x="${1%"$v"}"
+            handle_option "${x#-}" "$v"
+            shift
+            ;;
+        *) break ;;
+    esac
+done
+
+if [ $# = 0 ]; then
+    target="$interact"
+    if [ -z "$as" ]; then
+        as='[console]'
+    fi
+elif [ x"$1" = x- ]; then
+    shift
+    target="$interact"
+    if [ -z "$as" ]; then
+        as='[console]'
+    fi
+else
+    target="$1"
+    shift
+fi
+
+eval exec "$(squote "$python")" -S \
+    $py_prepend $py_x $py_warn \
+    $py_bytecode $py_env $py_optimize $py_unbuffered \
+    -c \''
+import sys
+del sys.argv[0]
+del sys.path[0]
+#bootstrap
+sys.path.append(sys.argv.pop(0))
+from pyr import _bootstrap
+_bootstrap(sys.argv)
+'\' "$(squote "$(dirname "$(readlink -f -- "$0")")/../py3")" \
+"$signal_tb" "$(squote "$dirs" "$site" "$target" "${as:-[pyr $target]}" "$@")"
