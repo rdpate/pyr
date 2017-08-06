@@ -1,16 +1,8 @@
 #!/bin/sh -ue
 #.help
-# Run Pyr with custom interactive console.
-
-### Modify these variables:
-# path to Pyr
-pyr="$(dirname "$0")/../pyr"
-# directory containing interact_main (and any others desired) added to sys.path
-interact_path="$0-lib"
-# entry point
-interact_main="user_console"
-###
-
+# % [TARGET [OPT..] [ARG..]]
+#
+# Run Pyr.  If TARGET is "-" or omitted, use custom path and module.  All options are passed unchanged to Pyr.
 
 is_interact() {
     while [ $# -gt 0 ]; do
@@ -24,6 +16,17 @@ is_interact() {
     [ $# = 0 ] || [ x"$1" = x- ]
 }
 if is_interact "$@"; then
-    set -- -p"$interact_path" --interact="$interact_main" "$@"
+    self="$(readlink -f -- "$0")"
+
+    ### Modify these variables:
+    # path to Pyr
+    pyr="${self%/*/*}/cmd/pyr"
+    # directory containing interact_main (and any others desired) added to sys.path
+    interact_path="$self-lib"
+    # entry point
+    interact_main="user_console"
+    ###
+
+    set -- -a"$0" -p"$interact_path" --interact="$interact_main" "$@"
 fi
 exec "$pyr" "$@"

@@ -193,16 +193,15 @@ else
     shift
 fi
 
+self="$(readlink -f -- "$0")"
 eval exec "$(squote "$python")" -S \
     $py_prepend $py_x $py_warn \
     $py_bytecode $py_env $py_optimize $py_unbuffered \
     -c \''
 import sys
-del sys.argv[0]
-del sys.path[0]
-#bootstrap
+del sys.argv[0], sys.path[0]
 sys.path.append(sys.argv.pop(0))
 from pyr import _bootstrap
-_bootstrap(sys.argv)
-'\' "$(squote "$(dirname "$(readlink -f -- "$0")")/../py3")" \
+_bootstrap()
+'\' "$(squote "${self%/*/*}/py3")" \
 "$signal_tb" "$(squote "$dirs" "$site" "$target" "${as:-[pyr $target]}" "$@")"

@@ -1,8 +1,6 @@
 # code must be compatible across all supported Python versions:
 #   2.7, 3.4, 3.5, 3.6
 # (other Python versions may work)
-# code must be able to be included in shell script within single quotes
-__version__ = "0.1.3"
 
 import errno
 import importlib
@@ -135,21 +133,21 @@ def _append_site(types):
             if e.name != "usercustomize":
                 raise
 
-def _bootstrap_setup(argv):
+def _bootstrap_setup():
     register_exit_signal(signal.SIGHUP, HangupSignal)
     register_exit_signal(signal.SIGTERM, TerminateSignal)
 
-    dirs = argv.pop(0)[1:]
+    dirs = sys.argv.pop(0)[1:]
     dirs = [] if not dirs else dirs.split(":")
     for x in dirs:
         if x not in sys.path:
             sys.path.append(x)
-    site_dirs = argv.pop(0)
+    site_dirs = sys.argv.pop(0)
     site_dirs = site_dirs.split(",") if site_dirs else []
     _append_site(site_dirs)
 
-    target = _get_target(argv.pop(0))
-    args = argv[1:]
+    target = _get_target(sys.argv.pop(0))
+    args = sys.argv[1:]
     opts = list(pop_opts(args))
     return target, opts, args
 
@@ -183,11 +181,11 @@ def _get_target(target):
     return target
 
 
-def _bootstrap(argv):
-    signal_tb = (argv.pop(0) == "true")
+def _bootstrap():
+    signal_tb = (sys.argv.pop(0) == "true")
     exit = None
     try:
-        target, opts, args = _bootstrap_setup(argv)
+        target, opts, args = _bootstrap_setup()
         exit = target(opts, args)
         if not exit:
             if sys.stdout is not None:

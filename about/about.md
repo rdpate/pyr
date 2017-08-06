@@ -62,23 +62,6 @@ Pyr's options to control Python and sys.path are still applied.  $PYTHONSTARTUP 
 
 Copy doc/custom-interact (eg. to ~/cmd/pyr) and modify it with the path to Pyr and the path to the above module.
 
-## Project Pyr
-
-Create a project utility command to localize Pyr settings:
-
-    #!/bin/sh -ue
-    # use -p with one or more directories to append to sys.path
-    # eg. the project's Python module directory (relative path from $0)
-    exec pyr -p"$(basename "$0")/../py3" "$@"
-
-Run without args for an interactive console or supply TARGET, either way project-specific directories and settings are applied.  Individual stubs can hook into your Python code simply:
-
-    #!/bin/sh -ue
-    # if above script is PROJECT/util/pyr
-    # and this script is one level below PROJECT
-    exec "$(dirname "$(readlink -f "$0")")/../util/pyr" -a"$0" TARGET "$@"
-    # readlink lets any symlinks to the stub work correctly
-
 ## Consistent Error Messages
 
 Pyr.optics provides several utilities for option and argument validation with consistent error messages.  See Exit, parse\_opts, and more.

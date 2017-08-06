@@ -11,7 +11,7 @@ Options:
 -2Y                       --py=python2[Y] (eg. -2)
 -3Y                       --py=python3[Y] (eg. -3.6)
     --signal-tb           print tracebacks for (some) signal exits
- FUTURE: signal-tb value to list signals that print traceback?
+# FUTURE: signal-tb value to list signals that print traceback?
     --interact=T          use T for console (default: pyr.interact)
 
 Python options:
