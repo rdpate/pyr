@@ -58,6 +58,9 @@ class Exit(SystemExit):
         SystemExit.__init__(self, code)
         self.message = message
 
+def internal_error(message="internal error"):
+    return Exit("software", message)
+
 def unknown_option(name):
     return Exit("usage", "unknown option " + name)
 def missing_value(name):
