@@ -26,6 +26,7 @@ dirs=
 python=python3
 signal_tb=false
 interact=pyr.interact
+run_file=false
 site=
 py_bytecode=
 py_env=-E
@@ -63,8 +64,8 @@ handle_option() {
                 if [ -z "$p" ]; then
                     fatal 64 "empty --path component"
                 fi
-                f="$(readlink -f -- "$p")" || fatal 64 "missing --dir: $p"
-                dirs="$dirs:$f"
+                f="$(readlink -f -- "$p")" || fatal 64 "missing --path: $p"
+                dirs="${dirs:+$dirs:}$f"
             done
             ;;
         py)
@@ -83,6 +84,10 @@ handle_option() {
             [ $# = 2 ] || fatal 64 "missing value for option $1"
             [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
             interact="$2"
+            ;;
+        f|file)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            run_file=true
             ;;
 
         no-bytecode)
@@ -178,11 +183,17 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# = 0 ]; then
+    if $run_file; then
+        fatal 64 '--file with missing TARGET'
+    fi
     target="$interact"
     if [ -z "$as" ]; then
         as='[console]'
     fi
 elif [ x"$1" = x- ]; then
+    if $run_file; then
+        fatal 64 '--file with "-" TARGET'
+    fi
     shift
     target="$interact"
     if [ -z "$as" ]; then
@@ -190,6 +201,19 @@ elif [ x"$1" = x- ]; then
     fi
 else
     target="$1"
+    if $run_file; then
+        target="$(basename "$target" .py)"
+        case "$target" in
+            *.*) fatal 64 "--file with invalid module filename: $1"
+        esac
+        target="$target.main"
+        p="$(dirname -- "$1")"
+        f="$(readlink -f -- "$p")" || fatal 64 "missing --path: $p"
+        case "$f" in
+            *:*) fatal 64 "--file TARGET path contains \":\": $f" ;;
+        esac
+        dirs="$f${dirs:+:$dirs}"
+    fi
     shift
 fi
 

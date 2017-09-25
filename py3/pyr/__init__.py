@@ -137,7 +137,7 @@ def _bootstrap_setup():
     register_exit_signal(signal.SIGHUP, HangupSignal)
     register_exit_signal(signal.SIGTERM, TerminateSignal)
 
-    dirs = sys.argv.pop(0)[1:]
+    dirs = sys.argv.pop(0)
     dirs = [] if not dirs else dirs.split(":")
     for x in dirs:
         if x not in sys.path:
