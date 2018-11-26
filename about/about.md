@@ -46,7 +46,7 @@ Pyr runs Python rather than the other way around.  Install Pyr by cloning the re
 
 Options must come before all arguments.  All options follow identical syntax in two flavors: short and long.  Short options start with a single hyphen and are named with a single character followed by the value, if any.  Long options start with double hyphens, separate the name and value with equals ("="), and allow distinguishing an empty value from no value.  Any short option may be specified as a long option with a single-character name (eg. --a, --b=X).
 
-Arguments follow all options.  The first argument either starts without a hyphen or is one of two special arguments: "-", which is retained, or "--", which is discarded.
+Arguments follow all options.  The first argument either starts without a hyphen or is one of two special arguments: "-" (which is retained) or "--" (which is discarded).
 
 ## Interactive Console
 
