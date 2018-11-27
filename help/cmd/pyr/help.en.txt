@@ -19,9 +19,9 @@ Python options:
     --no-bytecode       Python -B
 -e  --py-env            no Python -E
 -E  --no-py-env         Python -E (default)
-    --optimize[=on]     Python -O (default)
+-O  --optimize[=on]     Python -O (default)
     --optimize=off      no Python -O
-    --optimize=doc      Python -OO
+    --optimize=OO       Python -OO
     --no-site           Python -S (default)
 -s  --site[=user,sys]   append user/system site dirs after --path
 -u  --buffer=off        Python -u

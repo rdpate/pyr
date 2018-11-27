@@ -106,9 +106,13 @@ handle_option() {
             case "${2-on}" in
                 on)     py_optimize=-O      ;;
                 off)    py_optimize=        ;;
-                doc)    py_optimize=-OO     ;;
+                OO)     py_optimize=-OO     ;;
                 *) fatal 64 "unknown value for option $1" ;;
             esac
+            ;;
+        O)
+            [ $# = 1 ] || fatal 64 "unexpected value for option $1"
+            py_optimize=-O
             ;;
         no-site)
             [ $# = 1 ] || fatal 64 "unexpected value for option $1"
