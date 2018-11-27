@@ -3,24 +3,28 @@ Pyr
 
     pyr [TARGET [OPT..] [ARG..]]
 
-Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and "pythonXY -mmodule".  Put code into modules!  Pyr parses options consistently and uniformly, replacing optparse and argparse.  By default, Pyr has Python ignore environment variables, optimize code, and without site packages or user/sitecustomize modules.
+Pyr ("pure") is an experimental Python front-end to replace "pythonXY file" and "pythonXY -mmodule".  Pyr parses options consistently and uniformly, replacing optparse and argparse.  By default, Pyr has Python ignore environment variables, optimize code, and without site packages or user/sitecustomize modules.
 
 
 ## Quick Example
 
     $ mkdir cmd py3
-    $ cat >cmd/show <<END
+
+    $ cat >cmd/show <<'END'
     #!/bin/sh -ue
-    exec .../pyr -a"$0" -3.6 --path="$(dirname "$0")/../py3" example "$@"
+    exec .../path/to/pyr -3.6 --path="$(dirname "$0")/../py3" -a"$0" example "$@"
     END
-    $ cat >py3/example.py <<END
+
+    $ cat >py3/example.py <<'END'
     import sys
     def main(opts, args):
         print(sys.argv)
         print(opts)
         print(args)
     END
+
     $ chmod +x cmd/show
+
     $ ./cmd/show -a -b1 --cc --dd= --ee=2 foo 'bar baz'
     ['./cmd/show', '-a', '-b1', '--c', '--d=', '--e=2', 'foo', 'bar baz']
     [('a', None), ('b', '1'), ('cc', None), ('dd', ''), ('ee', '2')]
@@ -30,17 +34,7 @@ In particular while getting started with Pyr:  Use --optimize=off to execute ass
 
 ## Installation
 
-Pyr runs Python rather than the other way around.  Install Pyr by cloning the repository or unpacking an archive, then symlink cmd/pyr into $PATH:
-
-    hg clone https://bitbucket.org/rdpate/pyr
-    # or
-    wget -Opyr.tar.gz https://bitbucket.org/rdpate/pyr/get/@.tar.gz
-    mkdir pyr
-    tar -x -z -Cpyr --strip-components=1 -fpyr.tar.gz
-    rm -r pyr/util pyr.tar.gz
-
-    ln -s "$PWD/pyr/cmd/pyr" ~/cmd/pyr
-    # if ~/cmd is in $PATH
+Pyr runs Python rather than the other way around.  Install Pyr by cloning the repository or unpacking an archive, then symlink cmd/pyr into $PATH.
 
 ## Options & Arguments
 
