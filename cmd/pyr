@@ -1,15 +1,6 @@
 #!/bin/sh -ue
 
-fatal() {
-    printf %s\\n "$(basename "$0") error: $2" >&2
-    exit "$1"
-}
-is_digits() {
-    local x; for x; do case "$x" in *[!0-9]*|'') return 1 ;; *) ;; esac done
-}
-is_integer() {
-    local x; for x; do case "$x" in -*) is_digits "${x#-}" || return 1 ;; *[!0-9]*|'') return 1 ;; *) ;; esac done
-}
+fatal() { rc="$1"; shift; printf %s\\n "${0##*/} error: $*" >&2 || true; exit "$rc"; }
 squote() {
     while true; do
         printf \'%s\' "$(printf %s "$1" | sed -r s/\'/\'\\\\\'\'/g)"
@@ -21,31 +12,23 @@ squote() {
     done
 }
 
-as=
-dirs=
-python=python3
-signal_tb=false
-interact=pyr.interact
-run_file=false
-site=
-py_bytecode=
-py_env=-E
-py_optimize=-O
-py_unbuffered=
-py_warn=
-py_x=
-py_prepend=
+# options
+    as=
+    dirs=
+    python=python3
+    signal_tb=false
+    interact=pyr.interact
+    run_file=false
+    site=
+    py_bytecode=
+    py_env=-E
+    py_optimize=-O
+    py_unbuffered=
+    py_warn=
+    py_x=
+    py_prepend=
 handle_option() {
-    local x p f
     case "$1" in
-        # add options here, with common checks:
-            #[ $# = 2 ] || fatal 64 "missing value for option $1"
-            #[ $# = 1 ] || fatal 64 "unexpected value for option $1"
-            #is_digits "$2" || fatal 64 "expected (non-negative) integer for option $1"
-            #is_integer "$2" || fatal 64 "expected integer for option $1"
-        # less commonly useful:
-            #[ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
-            # $2 is only empty for "--long-option=" (equals with no following value)
         a|as)
             [ $# = 2 ] || fatal 64 "missing value for option $1"
             [ -n "$2" ] || fatal 64 "expected non-empty value for option $1"
@@ -169,12 +152,22 @@ handle_option() {
         *) fatal 64 "unknown option $1" ;;
     esac
 }
-
 while [ $# -gt 0 ]; do
     case "$1" in
         --) shift; break ;;
+        --=*) fatal 64 'missing option name' ;;
         --*=*) x="${1#--}"; handle_option "${x%%=*}" "${x#*=}"; shift ;;
         --*) handle_option "${1#--}"; shift ;;
+        -=*) fatal 64 'bad option name' ;;
+        -:*)
+            x="${1#??}"
+            shift
+            while [ -n "$x" ]; do
+                v="${x%?}"
+                set -- -"${x#"$v"}" "$@"
+                x="$v"
+                done
+            ;;
         -?) handle_option "${1#-}"; shift ;;
         -?*)
             v="${1#??}"
@@ -192,7 +185,7 @@ if [ $# = 0 ]; then
     fi
     target="$interact"
     if [ -z "$as" ]; then
-        as='[console]'
+        as="$0"
     fi
 elif [ x"$1" = x- ]; then
     if $run_file; then
@@ -201,7 +194,7 @@ elif [ x"$1" = x- ]; then
     shift
     target="$interact"
     if [ -z "$as" ]; then
-        as='[console]'
+        as="$0"
     fi
 else
     target="$1"

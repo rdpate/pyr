@@ -11,48 +11,6 @@ import traceback
 import types
 
 
-def interact(opts, args, locals=None):
-    if locals is None:
-        locals = {}
-    locals.setdefault("opts", opts)
-    locals.setdefault("args", args)
-    import code, inspect, site
-    try:
-        site.removeduppaths()
-    except Exception:
-        pass
-    try:
-        site.sethelper()
-    except Exception:
-        pass
-    try:
-        import atexit, readline
-    except ImportError:
-        pass
-    else:
-        import rlcompleter
-        readline.parse_and_bind("tab: complete")
-        history_fn = os.path.expanduser("~/.python{}_history".format(sys.version_info[0]))
-        if os.path.isfile(history_fn):
-            readline.read_history_file(history_fn)
-        atexit.register(readline.write_history_file, history_fn)
-    console = code.InteractiveConsole(locals)
-    if sys.version_info.major == 2:
-        # v2 requires banner, this is more useful than a blank line:
-        x = ["Python " + sys.version.split(None, 1)[0]]
-    else:
-        x = [""]
-    if "exitmsg" in inspect.getargspec(console.interact).args:
-        x.append("")
-    return console.interact(*x)
-
-class SignalExit(SystemExit):
-    pass
-class HangupSignal(SignalExit):
-    pass
-class TerminateSignal(SignalExit):
-    pass
-
 def pop_opts(args):
     """yield (name, value) options, then modify args in-place"""
     for n, x in enumerate(args):
@@ -62,26 +20,137 @@ def pop_opts(args):
         elif x.startswith("-") and len(x) != 1:
             if x.startswith("--"):
                 name, sep, value = x[2:].partition("=")
+                if not name:
+                    raise Exit("usage", "missing option name")
                 if not sep:
                     value = None
             else:
                 name, value = x[1], x[2:] or None
-            yield name, value
+            if any(x in pop_opts.bad_chars for x in name):
+                raise Exit("usage", "bad option name")
+            if name == ":":
+                if value is not None:
+                    for name in value:
+                        if name == ":":
+                            continue
+                        if any(x in pop_opts.bad_chars for x in name):
+                            raise Exit("usage", "bad option name")
+                        yield name, None
+            else:
+                yield name, value
         else:
             del args[:n]
             break
     else:
         del args[:]
+pop_opts.bad_chars = set(" `~!@#$%^&*=\\|;'\"?")
 
+def interact(opts, args, names=None):
+    if names is None:
+        names = {}
+    names.setdefault("opts", opts)
+    names.setdefault("args", args)
+    import code, inspect, site
+    try:
+        site.removeduppaths()
+    except Exception:
+        pass
+    try:
+        site.sethelper()
+    except Exception:
+        pass
+    readline = None
+    try:
+        import readline
+        history_fn = os.path.expanduser("~/.python{}_history".format(sys.version_info[0]))
+        if os.path.isfile(history_fn):
+            readline.read_history_file(history_fn)
+        import atexit
+        atexit.register(readline.write_history_file, history_fn)
+    except ImportError:
+        pass
+    if readline:
+        try:
+            import rlcompleter
+            readline.parse_and_bind("tab: complete")
+            readline.set_completer(rlcompleter.Completer(names).complete)
+        except ImportError:
+            pass
+    console = code.InteractiveConsole(names)
+    if sys.version_info.major == 2:
+        # PY2 requires banner, this is more useful than a blank line:
+        x = ["Python " + sys.version.split(None, 1)[0]]
+    else:
+        x = [""]
+    if "exitmsg" in inspect.getargspec(console.interact).args:
+        x.append("")
+    return console.interact(*x)
+
+def set_command_name(name):
+    global _error_prefix, _other_prefix
+    _error_prefix = name + " error:"
+    _other_prefix = name + ":"
+def _print_message(prefix, message):
+    if not message:
+        raise ValueError("missing message")
+    parts = [prefix]
+    parts.extend(str(x).replace("\n", " ") for x in message)
+    parts[-1] += "\n"
+    sys.stderr.write(" ".join(parts))
+def print_error(*message):
+    """print message with a command error prefix to stderr"""
+    _print_message(_error_prefix, message)
+def print_warning(*message):
+    """print message with a command prefix to stderr"""
+    _print_message(_other_prefix, message)
+
+def Exit(code, *message):
+    """raise Exit(code, "message with", values)"""
+    if message:
+        _print_message(_error_prefix, message)
+    if not isinstance(code, int):
+        code = Exit.codes[code]
+    return SystemExit(code)
+Exit.codes = {
+    "other":         1,
+    # freebsd: man sysexits
+    "usage":        64,
+    "dataerr":      65,
+    "noinput":      66,
+    "nouser":       67,
+    "nohost":       68,
+    "unavailable":  69,
+    "unknown":      69,
+    "internal":     70,
+    "to""do":       70,
+    "os":           71,
+    "osfile":       72,
+    "cantcreat":    73,
+    "cantcreate":   73,
+    "io":           74,
+    "tempfail":     75,
+    "protocol":     76,
+    "noperm":       77,
+    "config":       78,
+    }
+
+def _add_signals():
+    for name, value in signal.__dict__.items():
+        if name.startswith("SIG") and not name.startswith("SIG_"):
+            Exit.codes[name.lower()] = 128 + int(value)
+_add_signals()
+del _add_signals
+class SignalExit(SystemExit): pass
+class HangupSignal(SignalExit): pass
+class TerminateSignal(SignalExit): pass
 _exit_signals = {}
 def exit_signal(signum, frame):
     """raise last registered exception class (or SystemExit)"""
     raise _exit_signals.get(signum, SystemExit)(signum + 128)
-
 def register_exit_signal(signum, exception=None):
     """raise (exception or SystemExit)(signum + 128) on given signal
 
-    Exception must be None or derived from SystemExit.
+    Exception must be None or derived from SystemExit, and should be derived from SignalExit.
     """
     if exception is None:
         exception = SystemExit
@@ -89,13 +158,11 @@ def register_exit_signal(signum, exception=None):
     _exit_signals[signum] = exception
     signal.signal(signum, exit_signal)
 
-
 def _print_exception():
     sys.stderr.write("{} error...\n".format(sys.argv[0]))
     ty, val, tb = sys.exc_info()
     tb = tb.tb_next
     traceback.print_exception(ty, val, tb)
-
 def _append_site(types):
     import site
     def add_site_dir(dir):
@@ -132,7 +199,6 @@ def _append_site(types):
         except ImportError as e:
             if e.name != "usercustomize":
                 raise
-
 def _bootstrap_setup():
     register_exit_signal(signal.SIGHUP, HangupSignal)
     register_exit_signal(signal.SIGTERM, TerminateSignal)
@@ -150,7 +216,6 @@ def _bootstrap_setup():
     args = sys.argv[1:]
     opts = list(pop_opts(args))
     return target, opts, args
-
 def _get_target(target):
     target, _, rest = target.partition(".")
     try:
@@ -179,24 +244,30 @@ def _get_target(target):
             sys.stderr.write("pyr AttributeError: {}\n".format(e))
             sys.exit(70)
     return target
-
-
 def _bootstrap():
     signal_tb = (sys.argv.pop(0) == "true")
     exit = None
     try:
         target, opts, args = _bootstrap_setup()
+        set_command_name(os.path.basename(sys.argv[0]))
         exit = target(opts, args)
         if not exit:
             if sys.stdout is not None:
                 sys.stdout.flush()
             if sys.stderr is not None:
                 sys.stderr.flush()
-        sys.exit(exit)
+        raise SystemExit(exit)
+
     except KeyboardInterrupt:
         if signal_tb:
             _print_exception()
         exit = 128 + signal.SIGINT
+    except SystemExit as e:
+        exit = e.code
+        if not isinstance(exit, (int, type(None))):
+            print_error(exit)
+            exit = Exit.codes["unknown"])
+
     except IOError as e:
         # PY2: lacks BrokenPipeError, but this works in 3.x too
         if e.errno == errno.EPIPE:
@@ -205,18 +276,14 @@ def _bootstrap():
             exit = 128 + signal.SIGPIPE
         else:
             _print_exception()
-            exit = 1
-    except SystemExit as e:
-        exit = e.code
-        message = getattr(e, "message", None)
-        if message:
-            sys.stderr.write("{} error: {}\n".format(sys.argv[0], message))
-        elif not isinstance(exit, (int, type(None))):
-            sys.stderr.write("{} error: {}\n".format(sys.argv[0], exit))
-            exit = 1
+            exit = Exit.codes["io"]
+    except OSError as e:
+        _print_exception()
+        exit = Exit.codes["os"]
     except BaseException:
         _print_exception()
-        exit = 1
+        exit = Exit.codes["internal"]
+
     finally:
         try:
             if sys.stdout is not None:

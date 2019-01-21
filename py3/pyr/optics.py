@@ -6,6 +6,8 @@ import os
 import signal
 import sys
 
+from . import Exit
+
 try:
     import pathlib
 except ImportError:
@@ -14,63 +16,6 @@ except ImportError:
         def PurePath(v):
             return v
         Path = PurePath
-
-_other_prefix = os.path.basename(sys.argv[0])
-_error_prefix = _other_prefix + " error:"
-_other_prefix += ":"
-def _clean(x):
-    return str(x).replace("\n", " ")
-def _print(prefix, message):
-    if not message:
-        raise ValueError("empty message")
-    parts = [prefix]
-    parts.extend(_clean(x) for x in message)
-    parts[-1] += "\n"
-    sys.stderr.write(" ".join(parts))
-def print_error(*message):
-    """print message with a command error prefix to stderr"""
-    _print(_error_prefix, message)
-def print_warning(*message):
-    """print message with a command prefix to stderr"""
-    _print(_other_prefix, message)
-
-exit_codes = {
-    "other":         1,
-    # freebsd: man sysexits
-    "usage":        64,
-    "dataerr":      65,
-    "noinput":      66,
-    "nouser":       67,
-    "nohost":       68,
-    "unavailable":  69,
-    "software":     70,
-    "oserr":        71,
-    "osfile":       72,
-    "cantcreat":    73,
-    "cantcreate":   73,
-    "ioerr":        74,
-    "tempfail":     75,
-    "protocol":     76,
-    "noperm":       77,
-    "config":       78,
-    }
-def _add_signals():
-    for name, value in signal.__dict__.items():
-        if name.startswith("SIG") and not name.startswith("SIG_"):
-            exit_codes[name.lower()] = 128 + int(value)
-_add_signals()
-
-class Exit(SystemExit):
-    """SystemExit with a specific code and a string message"""
-    def __init__(self, code, message=None):
-        """code is an integer or exit_codes key"""
-        if not isinstance(code, int):
-            code = exit_codes[code]
-        SystemExit.__init__(self, code)
-        self.message = message
-
-def internal_error(message="internal error"):
-    return Exit("software", message)
 
 def unknown_option(name):
     return Exit("usage", "unknown option " + name)
