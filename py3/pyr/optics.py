@@ -15,13 +15,24 @@ except ImportError:
             return v
         Path = PurePath
 
-error_prefix = sys.argv[0] + " error: "
-def print_error(message, *rest):
-    message = error_prefix + str(message)
-    if rest:
-        message += " " + " ".join(str(x) for x in rest)
-    message += "\n"
-    sys.stderr.write(message)
+_other_prefix = os.path.basename(sys.argv[0])
+_error_prefix = _other_prefix + " error:"
+_other_prefix += ":"
+def _clean(x):
+    return str(x).replace("\n", " ")
+def _print(prefix, message):
+    if not message:
+        raise ValueError("empty message")
+    parts = [prefix]
+    parts.extend(_clean(x) for x in message)
+    parts[-1] += "\n"
+    sys.stderr.write(" ".join(parts))
+def print_error(*message):
+    """print message with a command error prefix to stderr"""
+    _print(_error_prefix, message)
+def print_warning(*message):
+    """print message with a command prefix to stderr"""
+    _print(_other_prefix, message)
 
 exit_codes = {
     "other":         1,
