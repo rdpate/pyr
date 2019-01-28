@@ -1,7 +1,7 @@
 import string
 import sys
 
-from . import optics
+from . import optics, pop_opts
 
 
 _examples = []
@@ -11,6 +11,22 @@ def _example(f):
 
 @_example
 def main(opts, args):
+    """ % [EXAMPLE [ARG..]]
+
+    Run EXAMPLE or list.
+    """
+    if opts:
+        raise optics.unknown_option(opts[0][0])
+    if not args:
+        args = ["ls"]
+    name = args.pop(0)
+    for x, f in _examples:
+        if x == name:
+            return f(list(pop_opts(args)), args)
+    raise optics.unknown_args()
+
+@_example
+def ls(opts, args):
     """ %
 
     List examples.
@@ -59,7 +75,6 @@ def show(opts, args):
     print(opts)
     print(args)
 
-
 @_example
 def showargs(opts, args):
     """% [OPT..] [ARG..]
@@ -74,7 +89,6 @@ def showargs(opts, args):
     for n, x in enumerate(args, start=1):
         print("{:3d} {}".format(n, x))
 
-
 SQUOTE_SAFE_CHARS = set(string.ascii_letters + string.digits + "-_=+:,./")
 def squote(s):
     if not s:
@@ -88,7 +102,7 @@ def reconstruct(opts, args):
 
     Reconstruct command line.
     """
-    argv = [sys.argv[0]]
+    argv = []
     for n, v in opts:
         if len(n) == 1:
             argv.append("-" + n)
@@ -102,8 +116,7 @@ def reconstruct(opts, args):
         argv.append("--")
     argv.extend(args)
     argv = " ".join(map(squote, argv))
-    print(argv)
-
+    print(("% " + argv).rstrip())
 
 @_example
 def head(opts, args):

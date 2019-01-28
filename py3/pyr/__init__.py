@@ -188,7 +188,8 @@ def _append_site(types):
             try:
                 import sitecustomize
             except ImportError as e:
-                if e.name != "sitecustomize":
+                # PY2: no ImportError.name attribute
+                if getattr(e, "name", "sitecustomize") != "sitecustomize":
                     raise
         else:
             sys.stderr.write("pyr error: unknown --site item: {!r}".format(dir_type))
@@ -197,7 +198,8 @@ def _append_site(types):
         try:
             import usercustomize
         except ImportError as e:
-            if e.name != "usercustomize":
+            # PY2: no ImportError.name attribute
+            if getattr(e, "name", "usercustomize") != "usercustomize":
                 raise
 def _bootstrap_setup():
     register_exit_signal(signal.SIGHUP, HangupSignal)
@@ -213,6 +215,7 @@ def _bootstrap_setup():
     _append_site(site_dirs)
 
     target = _get_target(sys.argv.pop(0))
+    set_command_name(os.path.basename(sys.argv[0]))
     args = sys.argv[1:]
     opts = list(pop_opts(args))
     return target, opts, args
@@ -249,7 +252,6 @@ def _bootstrap():
     exit = None
     try:
         target, opts, args = _bootstrap_setup()
-        set_command_name(os.path.basename(sys.argv[0]))
         exit = target(opts, args)
         if not exit:
             if sys.stdout is not None:
@@ -266,7 +268,7 @@ def _bootstrap():
         exit = e.code
         if not isinstance(exit, (int, type(None))):
             print_error(exit)
-            exit = Exit.codes["unknown"])
+            exit = Exit.codes["unknown"]
 
     except IOError as e:
         # PY2: lacks BrokenPipeError, but this works in 3.x too
