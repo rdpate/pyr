@@ -1,4 +1,21 @@
-#!/bin/sh -ue
+#!/bin/sh -Cue
+#.help
+# %
+#
+# Clean built files.
+
+fatal() { rc="$1"; shift; printf %s\\n "${0##*/} error: $*" >&2 || true; exit "$rc"; }
+nonfatal() { printf %s\\n "${0##*/}: $*" >&2 || true; }
+while [ $# -gt 0 ]; do case "$1" in --) shift; break ;; -) break ;; -*) fatal 64 'unexpected option' ;; *) break ;; esac; done
+
 cd "${0%/*}/.."
 find . -type d -name __pycache__ -exec rm -r {} ';' -prune
 find . -type f -name '*.py[co]' -delete
+if [ -e .redo ]; then
+    redo-targets | while IFS= read -r target; do
+        [ -e "$target" ] || continue
+        rm -r -f "$target"
+        done
+    rm -r .redo
+    fi
+mkdir .redo

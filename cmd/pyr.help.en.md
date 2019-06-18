@@ -13,7 +13,7 @@ Options:
     --signal-tb         print tracebacks for (some) signal exits
 # FUTURE: signal-tb value to list signals that print traceback?
     --interact=T        use T for console (default: pyr.interact)
--f  --file              --path=(TARGET's dirname), TARGET=basename.main
+-f  --file              using TARGET, add dirname to path and run basename.main
 
 Python options:
     --no-bytecode       Python -B
@@ -26,6 +26,6 @@ Python options:
 -s  --site[=user,sys]   append user/system site dirs after --path
 -u  --buffer=off        Python -u
     --buffer[=on]       no Python -u (default)
--WS --warn=S            Python -WS
--XS                     Python -XS
-    --prepend=RAW       prepend RAW to interpreter args
+-WS --warn=S            Python -WS (--prepend=-WS)
+-XS                     Python -XS (--prepend=-XS)
+    --prepend=RAW       prepend RAW interpreter option

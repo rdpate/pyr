@@ -1,0 +1,29 @@
+#!/bin/sh -Cue
+#.help
+# % [TARGET..]
+#
+# Build given TARGETs or discoverable targets.
+
+fatal() { rc="$1"; shift; printf %s\\n "${0##*/} error: $*" >&2 || true; exit "$rc"; }
+nonfatal() { printf %s\\n "${0##*/}: $*" >&2 || true; }
+while [ $# -gt 0 ]; do case "$1" in --) shift; break ;; -) break ;; -*) fatal 64 'unexpected option' ;; *) break ;; esac; done
+
+if [ $# = 0 ]; then
+    cd "${0%/*}/.."
+else
+    redo_dir="${0%/*}/../.redo"
+    [ -d "$redo_dir" ] || mkdir "$redo_dir"
+    fi
+
+if [ $# = 0 ]; then
+    # *.do except default.*do
+    find . -name '.?*' -prune -o -type f -name '?*.do' ! -name 'default.*do' -print | sed 's/\.do$//'
+
+    # compiled programs (handled by default.do)
+    find . -name '.?*' -prune -o -type f -name '?*.link' -print | sed 's/\.link$//'
+
+    # TODO: discover more targets, if applicable
+else
+    printf %s\\n "$@"
+    fi \
+| xargs -d\\n redo-ifchange
