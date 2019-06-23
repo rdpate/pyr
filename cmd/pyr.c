@@ -232,11 +232,22 @@ static int handle_option(char const *name, char const *value, void *data) {
     #undef OPT2
     }
 
-char const *py3_dir(char const *self) {
-    if (self[0] != '/') {
-        self = realpath(self, NULL); // memory is never freed
-        if (!self) fatal(71, "realpath failed: %s", strerror(errno));
+char const *self_realpath(char const *self) {
+    // note: realpath might allocate memory which is never freed
+    char const *s = realpath("/proc/self/exe", NULL);
+    if (s) return s;
+    if (strchr(self, '/')) {
+        // contains slash and therefore absolute or relative path
+        s = realpath(self, NULL);
+        if (!s) fatal(70, "realpath failed: %s", strerror(errno));
+        return s;
         }
+    // must lookup through PATH
+    fatal(70, "TODO");
+    return 0; // unreachable
+    }
+char const *py3_dir(char const *self) {
+    self = self_realpath(self);
     int slash = 0;
     for (int n = strlen(self) - 1; n > 0; n--) {
         if (self[n] == '/') {
