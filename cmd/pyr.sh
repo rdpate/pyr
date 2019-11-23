@@ -176,7 +176,7 @@ while [ $# -gt 0 ]; do
         --:) shift ;;
         --:*|--*[\ \`\~\!\@\#\$\%\^\&\*\\\|\;\'\"\?]*) fatal 64 'bad option name' ;;
         --*) handle_option "${1#--}"; shift ;;
-        -*[\ \`\~\!\@\#\$\%\^\&\*\=\\\|\;\'\"\?]*) fatal 64 'bad option name' ;;
+        -[\ \`\~\!\@\#\$\%\^\&\*\=\\\|\;\'\"\?]*) fatal 64 'bad option name' ;;
         -:*)
             x="${1#??}"
             shift
