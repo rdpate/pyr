@@ -274,50 +274,6 @@ int main(int argc, char **argv) {
 
     if (opts.run_file) {
         if (argc == 0) fatal(64, "--file requires TARGET argument");
-        char *slash = strrchr(argv[0], '/');
-        char *dirname, *basename;
-        if (!slash) {
-            dirname = realpath(".", NULL);
-            if (!dirname) fatal(71, "realpath failed: %s", strerror(errno));
-            basename = argv[0];
-            }
-        else if (slash == argv[0]) {
-            // argv[0] is "/filename"
-            dirname = "/";
-            basename = slash + 1;
-            }
-        else {
-            dirname = argv[0];
-            if (dirname[0] != '/') {
-                dirname = realpath(dirname, NULL);
-                if (!dirname) fatal(71, "realpath failed: %s", strerror(errno));
-                }
-            *slash = '\0';
-            basename = slash + 1;
-            }
-        if (strchr(dirname, ':')) fatal(64, "--file TARGET dirname contains colon: %s", dirname);
-        { // prepend TARGET dirname to opts.path
-            int n = opts.path ? 1 + strlen(opts.path) : 0;
-            char *path = malloc(strlen(dirname) + n + 1);
-            strcpy(path, dirname);
-            if (opts.path) {
-                strcat(path, ":");
-                strcat(path, opts.path);
-                }
-            free(opts.path);
-            opts.path = path;
-            }
-        { // set TARGET to basename + .main
-            char *dot = strchr(basename, '.');
-            if (!dot) fatal(64, "--file with unexpected TARGET (missing extension)");
-            if (strchr(dot + 1, '.')) {
-                fatal(64, "--file with unexpected TARGET (multiple extensions)");
-                }
-            *dot = '\0';
-            argv[0] = malloc(strlen(basename) + 5 + 1);
-            strcpy(argv[0], basename);
-            strcat(argv[0], ".main");
-            }
         }
 
     push_arg("-S");
@@ -339,6 +295,10 @@ int main(int argc, char **argv) {
     push_arg(opts.site ? opts.site : "");
     if (argc == 0 || strcmp(argv[0], "-") == 0) {
         push_arg(opts.interact);
+        }
+    else if (opts.run_file) {
+        push_arg("__file__");
+        push_arg(argv[0]);
         }
     else push_arg(argv[0]);
     if (opts.as) push_arg(opts.as);

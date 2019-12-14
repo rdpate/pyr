@@ -1,6 +1,4 @@
-# code must be compatible across all supported Python versions:
-#   2.7, 3.4, 3.5, 3.6
-# (other Python versions may work)
+# code must be compatible across all supported Python versions
 
 import errno
 import importlib
@@ -85,6 +83,14 @@ def interact(opts, args, names=None):
     if "exitmsg" in inspect.getargspec(console.interact).args:
         x.append("")
     return console.interact(*x)
+def execfile(path, globals=None):
+    if globals is None:
+        globals = {}
+    globals["__file__"] = path
+    globals["__name__"] = "__file__"
+    with open(path, "rb") as file:
+        exec(compile(file.read(), path, "exec"), globals, globals)
+    return globals
 
 def set_command_name(name):
     global _error_prefix, _other_prefix
@@ -214,7 +220,15 @@ def _bootstrap_setup():
     site_dirs = site_dirs.split(",") if site_dirs else []
     _append_site(site_dirs)
 
-    target = _get_target(sys.argv.pop(0))
+    target = sys.argv.pop(0)
+    if target == "__file__":
+        path = sys.argv.pop(0)
+        def target(opts, args):
+            g = execfile(path)
+            if "main" in g:
+                return g["main"](opts, args)
+    else:
+        target = _get_target(target)
     set_command_name(os.path.basename(sys.argv[0]))
     args = sys.argv[1:]
     opts = list(pop_opts(args))
