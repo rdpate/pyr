@@ -15,7 +15,7 @@ By default, Pyr has Python ignore environment variables, optimize code, and with
     $ cat >cmd/show <<'END'
     #!/bin/sh -Cue
     exec /path/to/pyr --path="$(dirname "$(readlink -f -- "$0")")/../py3" \
-        -a"$0" example "$@"
+        -a"$0" -m example "$@"
     END
 
     $ cat >py3/example.py <<'END'
@@ -89,17 +89,17 @@ The situation is arguably worse with Python -m, as the *current working director
 At either point, the file's location might as well be a path explicitly added to sys.path with a stub (located anywhere) used to call it.
 Use doc/show\_path.py to see these sys.path differences:
 
-    $ pyr -pdoc show_path
-    # ./doc is appended
+    $ pyr -pdoc -m show_path
+    # doc is appended
 
     $ PYTHONPATH=doc python3 -mshow_path
-    # CWD and ./doc are BOTH prepended
+    # CWD and doc are BOTH prepended
 
-    $ pyr -f doc/show_path.py
-    # ./doc NOT in sys.path
+    $ pyr doc/show_path.py
+    # doc NOT in sys.path
 
     $ python3 doc/show_path.py
-    # ./doc is prepended
+    # doc is prepended
 
 Because environment is inherited, local use of $PYTHONPATH might inadvertantly affect a child process (or be affected by a parent process) only incidentally implemented in Python.
 However, Python provides no other way to modify sys.path, apart from Python code manipulating sys.path which would, again, be put into a stub.
@@ -120,7 +120,7 @@ Use doc/yes.py to see differences from SIGPIPE:
     y
 
     # compare pyr's default behavior:
-    $ pyr -f doc/yes.py | head -n1
+    $ pyr doc/yes.py | head -n1
     y
 
     # against python's default behavior:
@@ -134,7 +134,7 @@ Use doc/yes.py to see differences from SIGPIPE:
     BrokenPipeError: [Errno 32] Broken pipe
 
     # signal tracebacks can be shown instead of hidden:
-    $ pyr --signal-tb -f doc/yes.py | head -n1
+    $ pyr --signal-tb doc/yes.py | head -n1
     y
     Traceback (most recent call last):
       File "doc/yes.py", line 3, in main
@@ -143,10 +143,10 @@ Use doc/yes.py to see differences from SIGPIPE:
 
 Use doc/sigint and doc/sleep.py to see differences from SIGINT:
 
-    $ doc/sigint pyr -f doc/sleep.py; echo $?
+    $ doc/sigint pyr doc/sleep.py; echo $?
     130
 
-    $ doc/sigint pyr --signal-tb -f doc/sleep.py; echo $?
+    $ doc/sigint pyr --signal-tb doc/sleep.py; echo $?
     Traceback (most recent call last):
       File "doc/sleep.py", line 4, in main
         time.sleep(60)
@@ -166,7 +166,7 @@ Use doc/sigint and doc/sleep.py to see differences from SIGINT:
 
 Python can lose exceptions with confusing errors, but Pyr does not:
 
-    $ pyr -f doc/date.py | :
+    $ pyr doc/date.py | :
 
     $ python3 doc/date.py | :
     Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='UTF-8'>

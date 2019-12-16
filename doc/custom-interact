@@ -1,4 +1,4 @@
-#!/bin/sh -ue
+#!/bin/sh -Cue
 #.help
 # % [TARGET [OPT..] [ARG..]]
 #
@@ -11,22 +11,17 @@ is_interact() {
             --*) shift ;;
             -?*) shift ;;
             *) break ;;
-        esac
-    done
+            esac
+        done
     [ $# = 0 ] || [ x"$1" = x- ]
-}
+    }
+
+# modify variables as required
+self="$(readlink -f -- "$0")"
+pyr="${self%/*/*}/cmd/pyr"
 if is_interact "$@"; then
-    self="$(readlink -f -- "$0")"
-
-    ### Modify these variables:
-    # path to Pyr
-    pyr="${self%/*/*}/cmd/pyr"
-    # directory containing interact_main (and any others desired) added to sys.path
     interact_path="$self-lib"
-    # entry point
     interact_main="user_console"
-    ###
-
     set -- -a"$0" -p"$interact_path" --interact="$interact_main" "$@"
-fi
+    fi
 exec "$pyr" "$@"

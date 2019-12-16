@@ -92,7 +92,7 @@ static struct {
         char const *py;
         bool signal_tb;
         char const *interact;
-        bool run_file;
+        bool module;
     // Python options
         bool no_bytecode;
         bool py_env;
@@ -131,12 +131,17 @@ static int handle_option(char const *name, char const *value, void *data) {
         }
     OPT2("path", "p") {
         if (!value) fatal(64, "missing value for option %s", name);
-        int n;
+        // TODO: use stat() to detect invalid paths and check for a directory
+        { // convert value to absolute path
+            // note: realpath might allocate memory which is never freed
+            value = realpath(value, NULL);
+            if (!value) fatal(70, "realpath failed: %s", strerror(errno));
+            }
+        int n = 0;
         if (opts.path) {
             n = strlen(opts.path) + 1;
             opts.path[n] = ':';
             }
-        else n = 0;
         opts.path = realloc(opts.path, n + strlen(value) + 1);
         strcpy(opts.path + n, value);
         }
@@ -163,9 +168,9 @@ static int handle_option(char const *name, char const *value, void *data) {
         if (!value) fatal(64, "missing value for option %s", name);
         opts.interact = value;
         }
-    OPT2("file", "f") {
+    OPT2("module", "m") {
         if (value) fatal(64, "unexpected value for option %s", name);
-        opts.run_file = true;
+        opts.module = true;
         }
     OPT("no-bytecode") {
         if (value) fatal(64, "unexpected value for option %s", name);
@@ -272,8 +277,8 @@ int main(int argc, char **argv) {
     if (!opts.py) opts.py = "python3";
     if (!opts.interact) opts.interact = "pyr.interact";
 
-    if (opts.run_file) {
-        if (argc == 0) fatal(64, "--file requires TARGET argument");
+    if (opts.module) {
+        if (argc == 0) fatal(64, "--module requires TARGET argument");
         }
 
     push_arg("-S");
@@ -296,21 +301,14 @@ int main(int argc, char **argv) {
     if (argc == 0 || strcmp(argv[0], "-") == 0) {
         push_arg(opts.interact);
         }
-    else if (opts.run_file) {
+    else if (!opts.module) {
         push_arg("__file__");
         push_arg(argv[0]);
         }
     else push_arg(argv[0]);
     if (opts.as) push_arg(opts.as);
     else if (argc == 0 || strcmp(argv[0], "-") == 0) push_arg(self);
-    else if (opts.run_file) push_arg(argv[0]);
-    else {
-        char *s = malloc(6 + strlen(argv[0]) + 1);
-        strcpy(s, "[pyr ");
-        strcat(s, argv[0]);
-        strcat(s, "]");
-        push_arg(s);
-        }
+    else push_arg(argv[0]);
     if (argc > 1) for (char **rest = argv + 1; rest != argv + argc; ++rest) {
         push_arg(*rest);
         }

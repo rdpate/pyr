@@ -1,18 +1,20 @@
 % [TARGET [OPT..] [ARG..]]
 
-Import TARGET and run sys.exit(TARGET(opts, args)), where opts is a list of (name, value) tuples and args is a list.  If TARGET specifies a module, TARGET.main will be used instead.
+Execute TARGET as Python source.  If TARGET defines "main", run main(opts, args), where opts is a list of (name, value) tuples and args is a list.  Unlike when directly executing with Python, "\_\_name\_\_" will be "\_\_file\_\_" instead of "\_\_main\_\_".
 
-If TARGET is "-" or missing, run Python interactively.  Locals include opts and args variables, which may be non-empty if TARGET is "-".
+With option -m/--module, TARGET is a dotted attribute list for a callable which is given opts and args arguments.  If TARGET is a module instead of a callable, then TARGET.main must exist and is used instead.
+
+If TARGET is "-" or missing, run Python interactively.  Locals include opts and args variables, which can be non-empty if TARGET is "-".
 
 Options:
--aP --as=PROG           sys.argv[0] (default: [pyr TARGET])
+-aP --as=PROG           use PROG as sys.argv[0]
 -pX --path=X            append colon-separated dirs to sys.path
     --py=PY             absolute/relative/$PATH Python (default: python3)
 -3Y                     --py=python3[Y] (eg. -3.6)
     --signal-tb         print tracebacks for (some) signal exits
 # FUTURE: signal-tb value to list signals that print traceback?
     --interact=T        use T for console (default: pyr.interact)
--f  --file              using TARGET, add dirname to path and run basename.main
+-m  --module            use TARGET callable (or TARGET.main for modules)
 
 Python options:
     --no-bytecode       Python -B
