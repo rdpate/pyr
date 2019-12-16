@@ -8,7 +8,6 @@ Options:
 -aP --as=PROG           sys.argv[0] (default: [pyr TARGET])
 -pX --path=X            append colon-separated dirs to sys.path
     --py=PY             absolute/relative/$PATH Python (default: python3)
--2Y                     --py=python2[Y] (eg. -2)
 -3Y                     --py=python3[Y] (eg. -3.6)
     --signal-tb         print tracebacks for (some) signal exits
 # FUTURE: signal-tb value to list signals that print traceback?

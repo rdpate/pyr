@@ -1,8 +1,7 @@
-import sys
 import time
 
 def main(opts, args):
-    time.sleep(600)
+    time.sleep(60)
 
 if __name__ == "__main__":
-    sys.exit(main([], []))
+    main([], [])

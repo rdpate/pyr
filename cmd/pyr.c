@@ -144,7 +144,7 @@ static int handle_option(char const *name, char const *value, void *data) {
         if (!value) fatal(64, "missing value for option %s", name);
         opts.py = value;
         }
-    OPT2("2", "3") {
+    OPT("3") {
         int n = 7; // strlen("pythonX")
         if (value) n += strlen(value);
         char *py = malloc(n + 1);
@@ -242,8 +242,8 @@ char const *self_realpath(char const *self) {
         if (!s) fatal(70, "realpath failed: %s", strerror(errno));
         return s;
         }
-    // must lookup through PATH
-    fatal(70, "TODO");
+    // TODO: lookup through PATH, or just fail?
+    fatal(70, "/proc/self/exe missing and argv[0] does not contain slash");
     return 0; // unreachable
     }
 char const *py3_dir(char const *self) {
@@ -303,6 +303,7 @@ int main(int argc, char **argv) {
     else push_arg(argv[0]);
     if (opts.as) push_arg(opts.as);
     else if (argc == 0 || strcmp(argv[0], "-") == 0) push_arg(self);
+    else if (opts.run_file) push_arg(argv[0]);
     else {
         char *s = malloc(6 + strlen(argv[0]) + 1);
         strcpy(s, "[pyr ");

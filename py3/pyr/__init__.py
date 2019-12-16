@@ -60,7 +60,7 @@ def interact(opts, args, names=None):
     readline = None
     try:
         import readline
-        history_fn = os.path.expanduser("~/.python{}_history".format(sys.version_info[0]))
+        history_fn = os.path.expanduser("~/.python3_history")
         if os.path.isfile(history_fn):
             readline.read_history_file(history_fn)
         import atexit
@@ -75,21 +75,14 @@ def interact(opts, args, names=None):
         except ImportError:
             pass
     console = code.InteractiveConsole(names)
-    if sys.version_info.major == 2:
-        # PY2 requires banner, this is more useful than a blank line:
-        x = ["Python " + sys.version.split(None, 1)[0]]
-    else:
-        x = [""]
-    if "exitmsg" in inspect.getargspec(console.interact).args:
-        x.append("")
-    return console.interact(*x)
+    return console.interact(banner="", exitmsg="")
 def execfile(path, globals=None):
     if globals is None:
         globals = {}
-    globals["__file__"] = path
-    globals["__name__"] = "__file__"
-    with open(path, "rb") as file:
-        exec(compile(file.read(), path, "exec"), globals, globals)
+    globals.setdefault("__file__", path)
+    globals.setdefault("__name__", "__file__")
+    with open(path, "rb") as f:
+        exec(compile(f.read(), path, "exec"), globals, globals)
     return globals
 
 def set_command_name(name):
@@ -139,13 +132,13 @@ Exit.codes = {
     "noperm":       77,
     "config":       78,
     }
-
 def _add_signals():
     for name, value in signal.__dict__.items():
         if name.startswith("SIG") and not name.startswith("SIG_"):
             Exit.codes[name.lower()] = 128 + int(value)
 _add_signals()
 del _add_signals
+
 class SignalExit(SystemExit): pass
 class HangupSignal(SignalExit): pass
 class TerminateSignal(SignalExit): pass
@@ -165,10 +158,12 @@ def register_exit_signal(signum, exception=None):
     signal.signal(signum, exit_signal)
 
 def _print_exception():
-    sys.stderr.write("{} error...\n".format(sys.argv[0]))
     ty, val, tb = sys.exc_info()
     tb = tb.tb_next
+    for _ in range(_print_exception.extra_skips):
+        tb = tb.tb_next
     traceback.print_exception(ty, val, tb)
+_print_exception.extra_skips = 0
 def _append_site(types):
     import site
     def add_site_dir(dir):
@@ -194,8 +189,7 @@ def _append_site(types):
             try:
                 import sitecustomize
             except ImportError as e:
-                # PY2: no ImportError.name attribute
-                if getattr(e, "name", "sitecustomize") != "sitecustomize":
+                if e.name != "sitecustomize":
                     raise
         else:
             sys.stderr.write("pyr error: unknown --site item: {!r}".format(dir_type))
@@ -204,8 +198,7 @@ def _append_site(types):
         try:
             import usercustomize
         except ImportError as e:
-            # PY2: no ImportError.name attribute
-            if getattr(e, "name", "usercustomize") != "usercustomize":
+            if e.name != "usercustomize":
                 raise
 def _bootstrap_setup():
     register_exit_signal(signal.SIGHUP, HangupSignal)
@@ -222,17 +215,22 @@ def _bootstrap_setup():
 
     target = sys.argv.pop(0)
     if target == "__file__":
-        path = sys.argv.pop(0)
-        def target(opts, args):
-            g = execfile(path)
-            if "main" in g:
-                return g["main"](opts, args)
+        target = _get_execfile(sys.argv.pop(0))
     else:
         target = _get_target(target)
     set_command_name(os.path.basename(sys.argv[0]))
     args = sys.argv[1:]
     opts = list(pop_opts(args))
     return target, opts, args
+def _get_execfile(path):
+    _print_exception.extra_skips += 1
+    def target(opts, args):
+        _print_exception.extra_skips += 1
+        main = execfile(path).get("main")
+        _print_exception.extra_skips -= 1
+        if main:
+            return main(opts, args)
+    return target
 def _get_target(target):
     target, _, rest = target.partition(".")
     try:
@@ -284,15 +282,13 @@ def _bootstrap():
             print_error(exit)
             exit = Exit.codes["unknown"]
 
-    except IOError as e:
-        # PY2: lacks BrokenPipeError, but this works in 3.x too
-        if e.errno == errno.EPIPE:
-            if signal_tb:
-                _print_exception()
-            exit = 128 + signal.SIGPIPE
-        else:
+    except BrokenPipeError as e:
+        if signal_tb:
             _print_exception()
-            exit = Exit.codes["io"]
+        exit = 128 + signal.SIGPIPE
+    except IOError as e:
+        _print_exception()
+        exit = Exit.codes["io"]
     except OSError as e:
         _print_exception()
         exit = Exit.codes["os"]

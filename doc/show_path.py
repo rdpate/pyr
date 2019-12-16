@@ -5,4 +5,4 @@ def main(opts, args):
         print("{:3d} {}".format(n, x))
 
 if __name__ == "__main__":
-    sys.exit(main([], []))
+    main([], [])
